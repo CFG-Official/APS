@@ -10,7 +10,7 @@ def calculate_hash(data):
 def merkle_tree(leaves):
     """
         Funzione che prende in input una lista di foglie e restituisce la radice del Merkle Tree.
-        Se l'albero non è completo, l'ultima foglia viene duplicata fino a che l'albero non è completo.
+        Se il livello ha un numero dispari di nodi, l'ultimo nodo viene duplicato.
     """
     if len(leaves) % 2 != 0:
         leaves.append(leaves[-1])
@@ -18,7 +18,6 @@ def merkle_tree(leaves):
     parent_nodes = []
     
     for i in range(0, len(leaves), 2):
-        #print("Siblings: ", leaves[i], leaves[i+1],"\n")
         parent_node = calculate_hash(leaves[i] + leaves[i+1])
         parent_nodes.append(parent_node)
         
