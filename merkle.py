@@ -1,11 +1,4 @@
-import subprocess
-
-def calculate_hash(data):
-    openssl_cmd = ['openssl', 'dgst', '-sha3-256', '-hex']
-    process = subprocess.Popen(openssl_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    stdout, stderr = process.communicate(input=data.encode('utf-8'))
-    hash_str = stdout.decode('utf-8')
-    return hash_str.split('= ')[1].strip()
+from hash import HashUtility
 
 def merkle_tree(leaves):
     """
@@ -18,7 +11,7 @@ def merkle_tree(leaves):
     parent_nodes = []
     
     for i in range(0, len(leaves), 2):
-        parent_node = calculate_hash(leaves[i] + leaves[i+1])
+        parent_node = HashUtility.calculate_hash(leaves[i] + leaves[i+1])
         parent_nodes.append(parent_node)
         
     if len(parent_nodes) == 1:
@@ -29,6 +22,6 @@ def merkle_tree(leaves):
 # Uso dell'algoritmo
 # Leaves sono le foglie dell'albero, ovvero i dati da autenticare.
 leaves = ['a', 'b', 'c', 'd', 'e']
-leaves = [calculate_hash(leaf) for leaf in leaves] # Se le foglie sono pre-hashate non serve questa riga.
+leaves = [HashUtility.calculate_hash(leaf) for leaf in leaves] # Se le foglie sono pre-hashate non serve questa riga.
 root = merkle_tree(leaves)
 print(root)
