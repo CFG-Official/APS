@@ -14,6 +14,6 @@ commands = {
     "CSRgen": lambda privKeyFile, outFile, configFile: f'openssl req -new -key {privKeyFile} -out {outFile} -config {configFile}',
     "CSRInteractiveGen": lambda privKey, outFile, configFile, f1, f2, f3, f4, f5, f6: f'openssl req -new -key {privKey} -out {outFile} -config {configFile} -subj "/CN={f1}/C={f2}/ST={f3}/L={f4}/O={f5}/OU={f6}"',
     "CSRview": lambda inFile: f'openssl req -in {inFile} -text',
-    "certAutoSign": lambda days, privKey, outFile, configFile: f'openssl req -new -x509 -days {days} -key {privKey} -out {outFile} -config {configFile}',
-    "certView": lambda inFile: f'openssl x509 -in {inFile} -text',
+    "CertAutoSign": lambda days, privKey, outFile, configFile: f'openssl req -new -x509 -days {days} -key {privKey} -out {outFile} -config {configFile}',
+    "AutoCertView": lambda inFile: f'openssl x509 -in {inFile} -text',
  }

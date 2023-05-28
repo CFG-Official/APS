@@ -40,10 +40,10 @@ def autoSignCertificate(days, privKeyFile, outFile, configFile):
             outFile: The file to output the certificate to.
             configFile: The file containing the configuration for the certificate.
     """
-    BU.executeCommand(commands["certAutoSign"](days, privKeyFile, outFile, configFile))
+    BU.executeCommand(commands["CertAutoSign"](days, privKeyFile, outFile, configFile))
 
 @staticmethod
-def viewCertificate(inFile):
+def viewAutoCertificate(inFile):
     """
         Views a certificate.
         # Arguments
@@ -51,4 +51,4 @@ def viewCertificate(inFile):
         # Returns
             The output of the command.
     """
-    return BU.executeCommand(commands["certView"](inFile))
+    return BU.executeCommand(commands["AutoCertView"](inFile))

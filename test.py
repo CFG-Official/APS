@@ -35,7 +35,7 @@ elif test == "certs":
     #Autosign certificate
     CU.autoSignCertificate(365, "Tests/Keys/privKey.pem", folder+"autoCert.pem", "ConfigurationFiles/baseConfig.cnf")
     # View certificate
-    print(CU.viewCertificate(folder+"autoCert.pem"))
+    print(CU.viewAutoCertificate(folder+"autoCert.pem"))
     
 else:
     
