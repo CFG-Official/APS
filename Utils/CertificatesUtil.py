@@ -29,3 +29,26 @@ def viewCertificate(inFile):
             The output of the command.
     """
     return BU.executeCommand(commands["CSRview"](inFile))
+
+@staticmethod
+def autoSignCertificate(days, privKeyFile, outFile, configFile):
+    """
+        Automatically signs a certificate signing request.
+        # Arguments
+            days: The number of days the certificate will be valid for.
+            privKeyFile: The file containing the private key.
+            outFile: The file to output the certificate to.
+            configFile: The file containing the configuration for the certificate.
+    """
+    BU.executeCommand(commands["certAutoSign"](days, privKeyFile, outFile, configFile))
+
+@staticmethod
+def viewCertificate(inFile):
+    """
+        Views a certificate.
+        # Arguments
+            inFile: The file containing the certificate.
+        # Returns
+            The output of the command.
+    """
+    return BU.executeCommand(commands["certView"](inFile))

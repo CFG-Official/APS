@@ -2,7 +2,7 @@ import Utils.KeysUtil as KU
 import Utils.CertificatesUtil as CU
 
 # set the test variable
-test = "certs"
+test = ""
 
 # WARNING: clean the test folders before doing any test !!!
 
@@ -31,6 +31,11 @@ elif test == "certs":
     fields = ["Nome: ", "Sesso (2 caratteri): ", "Cognome: ", "Data di nascita (i backslash li ignora): ", "Luogo di nascita: ", "Codice fiscale: "]
     CU.interactiveRequireCertificate(fields, "Tests/Keys/privKey.pem", folder+"csr2.pem", "ConfigurationFiles/baseConfig.cnf")
     print(CU.viewCertificate(folder+"csr2.pem"))
+    
+    #Autosign certificate
+    CU.autoSignCertificate(365, "Tests/Keys/privKey.pem", folder+"autoCert.pem", "ConfigurationFiles/baseConfig.cnf")
+    # View certificate
+    print(CU.viewCertificate(folder+"autoCert.pem"))
     
 else:
     
