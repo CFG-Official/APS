@@ -1,7 +1,6 @@
 import utils.bash_util as BU
 from utils.commands_util import commands
 
-@staticmethod
 def gen_ECDSA_keys(curve_name, param_file, priv_key_file, pub_key_file):
     """
     Generates ECDSA keys using the openssl bash command.
@@ -15,7 +14,6 @@ def gen_ECDSA_keys(curve_name, param_file, priv_key_file, pub_key_file):
     BU.execute_command(commands["ECDSA_priv_key_gen"](param_file, priv_key_file))
     BU.execute_command(commands["ECDSA_pub_key_gen"](priv_key_file, pub_key_file))
     
-@staticmethod
 def view_ECDSA_params(param_file):
     """
     Views ECDSA parameters using the openssl bash command.
@@ -26,7 +24,6 @@ def view_ECDSA_params(param_file):
     """ 
     return BU.execute_command(commands["ECDSA_params_view"](param_file))
     
-@staticmethod
 def view_ECDSA_priv_key(priv_key_file):
     """
     Views ECDSA private key using the openssl bash command.
@@ -37,7 +34,6 @@ def view_ECDSA_priv_key(priv_key_file):
     """ 
     return BU.execute_command(commands["ECDSA_priv_key_view"](priv_key_file))
     
-@staticmethod
 def view_ECDSA_pub_key(pub_key_file):
     """
     Views ECDSA public key using the openssl bash command.

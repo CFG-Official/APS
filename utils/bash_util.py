@@ -1,6 +1,5 @@
 import subprocess
 
-@staticmethod
 def execute_command(command: str):
     """
         Executes a command in the shell and returns the output.

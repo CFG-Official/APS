@@ -1,7 +1,6 @@
 import utils.bash_util as BU
 from utils.commands_util import commands
 
-@staticmethod
 def require_certificate(priv_key_file, out_file, config_file):
     """
         Generates a certificate signing request.
@@ -12,7 +11,6 @@ def require_certificate(priv_key_file, out_file, config_file):
     """
     BU.execute_command(commands["CSR_gen"](priv_key_file, out_file, config_file))
     
-@staticmethod
 def interactive_require_certificate(fields, priv_key_file, out_file, config_file):
     """ 
         Generates a certificate signing request with the given fields.
@@ -29,7 +27,6 @@ def interactive_require_certificate(fields, priv_key_file, out_file, config_file
         inputs.append(input(field))
     BU.execute_command(commands["CSR_interactive_gen"](priv_key_file, out_file, config_file, *inputs))
     
-@staticmethod
 def view_certificate(in_file):
     """
         Views a certificate signing request.
@@ -40,7 +37,6 @@ def view_certificate(in_file):
     """
     return BU.execute_command(commands["CSR_view"](in_file))
 
-@staticmethod
 def auto_sign_certificate(days, priv_key_file, out_file, config_file):
     """
         Automatically signs a certificate signing request.
@@ -52,7 +48,6 @@ def auto_sign_certificate(days, priv_key_file, out_file, config_file):
     """
     BU.execute_command(commands["cert_auto_sign"](days, priv_key_file, out_file, config_file))
 
-@staticmethod
 def view_auto_certificate(in_file):
     """
         Views an autosigned certificate.
