@@ -4,6 +4,26 @@ import utils.bash_util as BU
 from utils.commands_util import commands
 
 def create_CA(ca_name, priv_key_file, pub_key_file, out_file, curve_name, param_file, days, config_file):
+    """ 
+    Create a CA with the given name, private key, public key, output file, curve name, parameter file, days and config file.
+    # Arguments
+        ca_name: string
+            The name of the CA.
+        priv_key_file: string
+            The name of the private key file.
+        pub_key_file: string
+            The name of the public key file.
+        out_file: string
+            The name of the output file.
+        curve_name: string
+            The name of the curve.
+        param_file: string
+            The name of the parameter file.
+        days: int
+            The number of days.
+        config_file: string
+            The name of the config file.
+    """
     # Create the CA folder
     BU.execute_command(commands["create_CA_main_dir"](ca_name))
     BU.execute_command(commands["create_CA_key_dir"](ca_name))
