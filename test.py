@@ -2,9 +2,10 @@ import utils.keys_util as KU
 import utils.certificates_util as CU
 import utils.CA_util as CAU
 import utils.pseudorandom_util as PRU
+import utils.hash_util as HU
 
 # set the test variable
-test = "rand"
+test = ""
 
 # WARNING: clean the test folders before doing any test !!!
 
@@ -57,6 +58,10 @@ elif test == "rand":
     print(PRU.pseudo_random_view_bin("tests/randomness/randomness.bin"))
     print(PRU.pseudo_random_view_hex("tests/randomness/randomness.hex"))
     print(PRU.pseudo_random_view_base64("tests/randomness/randomness.base64"))
+    
+elif test == "hash":
+    
+    HU.compute_hash_from_file("tests/randomness/randomness.bin", "tests/hash/randomness", "sha256")
     
 else:
     

@@ -12,6 +12,9 @@ commands = {
     "rand_view_bin": lambda in_file: f'cat {in_file} | xxd -b',
     "rand_view_hex": lambda in_file: f'cat {in_file} | xxd -p',
     "rand_view_base64": lambda in_file: f'cat {in_file} | xxd -p | base64',
+    # Hash
+    "compute_hash_from_data": lambda data: f'printf {data} | openssl dgst -sha3-256 -hex',
+    "compute_hash_from_file": lambda in_file, out_file, hash_alg: f'{openssl} dgst -{hash_alg} {in_file} >> {out_file}',
     # ECDSA keys
     "ECDSA_params_gen": lambda name, out_file: f'{openssl} ecparam -name {name} -out {out_file}',
     "ECDSA_params_view": lambda in_file: f'{openssl} ecparam -in {in_file} -text',
