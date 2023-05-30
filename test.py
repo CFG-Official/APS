@@ -4,7 +4,7 @@ import utils.CA_util as CAU
 import utils.pseudorandom_util as PRU
 
 # set the test variable
-test = "rand"
+test = ""
 
 # WARNING: clean the test folders before doing any test !!!
 
@@ -35,7 +35,7 @@ elif test == "certs":
     print(CU.view_certificate(folder+"csr2.pem"))
     
     #Autosign certificate
-    CU.auto_sign_certificate(365, "tests/keys/privKey.pem", folder+"autoCert.cert", "configuration_files/base_config.cnf")
+    CU.auto_sign_certificate(365, "tests/keys/privKey.pem", folder+"autoCert.cert", "configuration_files/testCA_config.cnf")
     # View certificate
     print(CU.view_auto_certificate(folder+"autoCert.cert"))
     
@@ -45,6 +45,7 @@ elif test == "CA":
     folder = "tests/CA/"
     # Create CA
     CAU.create_CA(folder+"testCA", "tests/keys/privKey.pem", "tests/keys/pubKey.pem", folder+"testCA.cert", "prime256v1", "tests/keys/param.pem", 365, "configuration_files/base_config.cnf")
+    CAU.sign_cert("tests/certificates/csr.pem", folder+"autoCert.cert", "configuration_files/testCA_config.cnf")
     
 elif test == "rand":
     

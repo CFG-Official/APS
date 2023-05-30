@@ -37,3 +37,29 @@ def create_CA(ca_name, priv_key_file, pub_key_file, out_file, curve_name, param_
     # Move the CA certificate and key to the CA folder
     BU.execute_command(commands["move_CA_cert"](ca_name, out_file))
     BU.execute_command(commands["move_CA_key"](ca_name, priv_key_file))
+    
+def sign_cert(in_file,out_file,config_file):
+    """ 
+    Sign a certificate with the given input file, output file and config file.
+    # Arguments
+        in_file: string
+            The name of the input file.
+        out_file: string
+            The name of the output file.
+        config_file: string
+            The name of the config file.
+    """
+    BU.execute_command(commands["sign_certificate"](in_file,out_file,config_file))
+    
+def sign_cert_with_extension(in_file,out_file,config_file,extension_file):
+    """ 
+    Sign a certificate with the given input file, output file and config file.
+    # Arguments
+        in_file: string
+            The name of the input file.
+        out_file: string
+            The name of the output file.
+        config_file: string
+            The name of the config file.
+    """
+    BU.execute_command(commands["sign_certificate_with_extensions"](in_file,out_file,config_file,extension_file))
