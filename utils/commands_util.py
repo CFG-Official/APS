@@ -3,6 +3,13 @@
 # The commands are stored as strings so that they can be easily executed using the subprocess module.
 
 commands = {
+    # Randomness extraction
+    "rand_extract_bin": lambda out_file, num_bytes: f'openssl rand -out {out_file} {num_bytes}',
+    "rand_extract_hex": lambda out_file, num_bytes: f'openssl rand -hex {num_bytes} >> {out_file}',
+    "rand_extract_base64": lambda out_file, num_bytes: f'openssl rand -base64 {num_bytes} >> {out_file}',
+    "rand_view_bin": lambda in_file: f'cat {in_file} | xxd -b',
+    "rand_view_hex": lambda in_file: f'cat {in_file} | xxd -p',
+    "rand_view_base64": lambda in_file: f'cat {in_file} | xxd -p | base64',
     # ECDSA keys
     "ECDSA_params_gen": lambda name, out_file: f'openssl ecparam -name {name} -out {out_file}',
     "ECDSA_params_view": lambda in_file: f'openssl ecparam -in {in_file} -text',
@@ -24,4 +31,6 @@ commands = {
     "create_CA_serial_file": lambda ca_name: f'echo 00 > {ca_name}/serial',
     "move_CA_cert": lambda ca_name, cert_file: f'mv {cert_file} {ca_name}',
     "move_CA_key": lambda ca_name, priv_key_file: f'mv {priv_key_file} {ca_name}/private',
+    # CA sign CSR
+    
  }
