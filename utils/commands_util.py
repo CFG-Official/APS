@@ -35,5 +35,5 @@ commands = {
     "move_CA_key": lambda ca_name, priv_key_file: f'mv {priv_key_file} {ca_name}/private',
     # CA sign CSR
     "sign_certificate": lambda in_file,out_file,config_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file}',
-    "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extensions_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extensions {extensions_file}',
- }
+    "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extensions_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extfile {extensions_file}',
+}
