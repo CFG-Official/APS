@@ -1,11 +1,11 @@
 import utils.keys_util as KU
 import utils.certificates_util as CU
 import utils.CA_util as CAU
-import utils.pseudorandom_util as PRU
+import utils.pseudorandom_util as PRG
 import utils.hash_util as HU
 
 # set the test variable
-test = "RSAsign"
+test = "rand"
 
 # WARNING: clean the test folders before doing any test !!!
 
@@ -68,18 +68,12 @@ elif test == "CA":
     CAU.sign_cert_with_extension("tests/certificates/csr.pem", folder+"autoCert.cert", "configuration_files/testCA_config.cnf", "configuration_files/extensions.cnf")
     
 elif test == "rand":
-    
-    PRU.pseudo_random_gen_bin("tests/randomness/randomness.bin", 1024)
-    PRU.pseudo_random_gen_hex("tests/randomness/randomness.hex", 1024)
-    PRU.pseudo_random_gen_base64("tests/randomness/randomness.base64", 1024)
-    
-    print(PRU.pseudo_random_view_bin("tests/randomness/randomness.bin"))
-    print(PRU.pseudo_random_view_hex("tests/randomness/randomness.hex"))
-    print(PRU.pseudo_random_view_base64("tests/randomness/randomness.base64"))
+    PRG.pseudo_random_gen("palle.hex",24,"base64")
+    print(PRG.pseudo_random_view("palle.hex","base64"))
     
 elif test == "hash":
     
-    HU.compute_hash_from_file("tests/randomness/randomness.bin", "tests/hash/randomness", "sha256")
+    HU.compute_hash_from_file("tests/randomness/randomness.bin", "tests/hash/randomness", "sha3-256")
     
 else:
     
