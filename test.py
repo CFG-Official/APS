@@ -5,11 +5,11 @@ import utils.pseudorandom_util as PRU
 import utils.hash_util as HU
 
 # set the test variable
-test = ""
+test = "RSAsign"
 
 # WARNING: clean the test folders before doing any test !!!
 
-if test == "keys":
+if test == "ECDSAkeys":
     
     print("Testing keys")
     # Test ECDSA keys generation
@@ -20,6 +20,24 @@ if test == "keys":
     print(KU.view_ECDSA_params(folder+"param.pem"))
     print(KU.view_ECDSA_priv_key(folder+"privKey.pem"))
     print(KU.view_ECDSA_pub_key(folder+"pubKey.pem"))
+    
+elif test == "RSAkeys":
+    
+    print("Testing keys")
+    # Test RSA keys generation
+    folder = "tests/keys/"
+    KU.gen_RSA_keys(2048, folder+"privKey.pem")
+    KU.export_RSA_pub_key(folder+"privKey.pem", folder+"pubKey.pem")
+    print(KU.view_RSA_priv_key(folder+"privKey.pem"))
+    print(KU.view_RSA_pub_key(folder+"pubKey.pem"))
+    
+elif test == "RSAsign":
+    
+    print("Testing signing")
+    # Test RSA signing
+    folder = "tests/keys/"
+    KU.sign_RSA(folder+"privKey.pem", "tests/test.txt", folder+"sign.txt")
+    print(KU.verify_RSA(folder+"pubKey.pem", "tests/test.txt", folder+"sign.txt"))
     
 elif test == "certs":
     

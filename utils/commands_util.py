@@ -15,6 +15,13 @@ commands = {
     # Hash
     "compute_hash_from_data": lambda data: f'printf {data} | openssl dgst -sha3-256 -hex',
     "compute_hash_from_file": lambda in_file, out_file, hash_alg: f'{openssl} dgst -{hash_alg} {in_file} >> {out_file}',
+    # RSA keys
+    "RSA_priv_key_gen": lambda out_file, num_bits: f'{openssl} genrsa -out {out_file} {num_bits}',
+    "RSA_pub_key_export": lambda in_file, out_file: f'{openssl} rsa -pubout -in {in_file} -out {out_file}',
+    "RSA_priv_key_view": lambda in_file: f'{openssl} rsa -in {in_file} -text',
+    "RSA_pub_key_view": lambda in_file: f'{openssl} rsa -pubin -in {in_file} -text',
+    "RSA_sign": lambda in_file, priv_key_file, signature: f'{openssl} pkeyutl -sign -in {in_file} -inkey {priv_key_file} -out {signature}',
+    "RSA_verify": lambda in_file, signature, pub_key_file: f'{openssl} pkeyutl -verify -in {in_file} -sigfile {signature} -pubin -inkey {pub_key_file}',
     # ECDSA keys
     "ECDSA_params_gen": lambda name, out_file: f'{openssl} ecparam -name {name} -out {out_file}',
     "ECDSA_params_view": lambda in_file: f'{openssl} ecparam -in {in_file} -text',
