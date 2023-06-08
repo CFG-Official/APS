@@ -162,6 +162,6 @@ class AS:
             f.write(ext)
         
         sign_cert_with_extension(csr, name+"_GP.cert", "src/configuration_files/AS.cnf", "src/configuration_files/AS_extensions.cnf")
-        return name+'/'+name+"_GP.cert", pairs
+        return name+"_GP.cert", pairs
 
     

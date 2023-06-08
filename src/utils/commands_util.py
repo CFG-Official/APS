@@ -5,6 +5,8 @@
 openssl = "openssl" # insert the path to your openssl executable here
 
 commands = {
+    # Create directory
+    "create_directory": lambda dir_name: f'mkdir {dir_name}',
     # Permissions
     "give_permissions": lambda file: f'chmod 777 {file}',
     # Randomness extraction
@@ -33,6 +35,8 @@ commands = {
     "ECDSA_priv_key_view": lambda in_file: f'{openssl} pkey -in {in_file} -text',
     "ECDSA_pub_key_gen": lambda priv_key_file, out_file: f'{openssl} pkey -in {priv_key_file} -pubout -out {out_file}',
     "ECDSA_pub_key_view": lambda in_file: f'{openssl} pkey -pubin -in {in_file} -text',
+    "ECDSA_sign": lambda out_file, priv_key_file, signature: f'{openssl} dgst -sign {priv_key_file} -out {signature} {out_file}',
+    "ECDSA_verify": lambda in_file, signature, pub_key_file: f'{openssl} dgst -verify {pub_key_file} -signature {signature} {in_file}',
     # Certificate Signing Requests
     "CSR_gen": lambda priv_key_file, out_file, config_file: f'{openssl} req -new -key {priv_key_file} -out {out_file} -config {config_file}',
     "CSR_interactive_gen": lambda priv_key_file, out_file, config_file, f1, f2, f3, f4, f5, f6: f'{openssl} req -new -key {priv_key_file} -out {out_file} -config {config_file} -subj "/CN={f1}/C={f2}/ST={f3}/L={f4}/O={f5}/OU={f6}"',
@@ -50,8 +54,13 @@ commands = {
     # CA sign CSR
     "sign_certificate": lambda in_file, out_file, config_file: f'{openssl} ca -batch -in {in_file} -out {out_file} -policy policy_anything -config {config_file}',
     "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extension: f'{openssl} ca -batch -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extfile {extension}',
-    "create_directory": lambda dir_name: f'mkdir {dir_name}',
     # Certificates
     "cert_extract_public_key": lambda in_file, out_file: f'{openssl} x509 -pubkey -noout -in {in_file} > {out_file}',
-    "cert_extract_subject_fields": lambda cert_file: f'openssl x509 -in {cert_file} -noout -subject'
+    "cert_extract_subject_fields": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -subject',
+    "cert_extract_subject": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -subject | cut -d "=" -f 2',
+    "cert_extract_issuer": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -issuer | cut -d "=" -f 2',
+    "cert_extract_signature": lambda cert_file, signature: f'{openssl} x509 -in {cert_file} -noout -text > {signature}',
+    "cert_extract_expiration_date": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -enddate',
+    "copy_cert": lambda in_file, out_file: f'cp {in_file} {out_file}',
+    "validate_certificate":lambda CA_cert, cert_user:f'openssl verify -CAfile {CA_cert} {cert_user} '
 }

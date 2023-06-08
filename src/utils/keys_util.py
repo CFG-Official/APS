@@ -44,6 +44,28 @@ def view_ECDSA_pub_key(pub_key_file):
     """ 
     return BU.execute_command(commands["ECDSA_pub_key_view"](pub_key_file))
 
+def sign_ECDSA(priv_key_file, data_file, signature_file):
+    """ 
+    Sign a file with the given private key.
+    # Arguments
+        priv_key_file: The file to read the private key from.
+        data_file: The file to sign.
+        signature_file: The file to store the signature in.
+    """
+    BU.execute_command(commands["ECDSA_sign"](data_file, priv_key_file, signature_file))
+
+def verify_ECDSA(pub_key_file, data_file, signature_file):
+    """
+    Verify a file with the given public key.
+    # Arguments
+        pub_key_file: The file to read the public key from.
+        data_file: The file to verify.
+        signature_file: The file to read the signature from.
+    # Returns
+        The output of the command.
+    """
+    return BU.execute_command(commands["ECDSA_verify"](data_file, signature_file, pub_key_file))
+
 def gen_RSA_keys(key_size, priv_key_file):
     """
     Generates RSA keys using the openssl bash command.
