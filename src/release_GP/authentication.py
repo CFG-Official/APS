@@ -3,7 +3,8 @@ from AS import AS
 
 if __name__ == "__main__":
     # Create the user and the AS
-    alice = User("Alice")
+    # CIE = [name and surname, nation (2 letters), gender, birthplace, birthday, CF]
+    alice = User(["Alice", "IT", "F", "Rome", "1990-01-01", "CF"])
     authority = AS()
     # The AS sends a random string to the user
     rand = authority.send_randomness()
@@ -14,7 +15,10 @@ if __name__ == "__main__":
     
     # The user sends the CSR to the AS
     GP_csr = alice.require_GP()
-    cert, clear_fields = authority.release_GP(GP_csr)
+    # The AS signs the CSR and sends the certificate to the user along with the clear fields
+    cert, clear_fields = authority.release_GP(GP_csr) 
+    # make interactive if needed <-- TODO
+    alice.get_GP(cert, clear_fields)
     
     
     

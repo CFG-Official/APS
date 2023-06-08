@@ -1,4 +1,5 @@
 rm -r src/utils/__pycache__/
+rm -r src/__pycache__/
 rm -r src/release_GP/__pycache__/
 rm -r __pycache__
 rm -r tests/CA/*

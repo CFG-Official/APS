@@ -1,5 +1,6 @@
 import base64
 import utils.bash_util as BU
+import utils.hash_util as HU
 from utils.commands_util import commands
 
 def rand_extract(bytes:int, encode:str):
@@ -109,3 +110,14 @@ def pseudo_random_view_base64(in_file):
             in_file: The file to read the pseudo random number from.
     """
     return BU.execute_command(commands["rand_view_base64"](in_file))
+
+def hash_concat_data_and_rand(bytes, data):
+    """
+        Concatenates the data with a pseudo random number.
+        # Arguments
+            data: The data to concatenate.
+        # Returns
+            The concatenated data.
+    """
+    rand = rand_extract(bytes, "hex")
+    return data, rand, HU.compute_hash_from_data((data+rand).removesuffix("\n"))

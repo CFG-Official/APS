@@ -11,6 +11,19 @@ def require_certificate(priv_key_file, out_file, config_file):
     """
     BU.execute_command(commands["CSR_gen"](priv_key_file, out_file, config_file))
     
+def require_certificate_with_given_fields(fields, priv_key_file, out_file, config_file):
+    """ 
+    Generates a certificate signing request with the given fields.
+    # Arguments
+        fields: The fields to use for the certificate signing request.
+        priv_key_file: The file containing the private key.
+        out_file: The file to output the certificate signing request to.
+        config_file: The file containing the configuration for the certificate signing request.
+    # Notes
+        The number of fields has to be equal to the number of fields in the configuration file.
+    """
+    BU.execute_command(commands["CSR_interactive_gen"](priv_key_file, out_file, config_file, *fields))
+    
 def interactive_require_certificate(fields, priv_key_file, out_file, config_file):
     """ 
         Generates a certificate signing request with the given fields.

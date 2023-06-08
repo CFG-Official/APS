@@ -49,8 +49,9 @@ commands = {
     "move_CA_key": lambda ca_name, priv_key_file: f'mv {priv_key_file} {ca_name}/private',
     # CA sign CSR
     "sign_certificate": lambda in_file, out_file, config_file: f'{openssl} ca -batch -in {in_file} -out {out_file} -policy policy_anything -config {config_file}',
-    "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extensions_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extfile {extensions_file}',
+    "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extension: f'{openssl} ca -batch -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extfile {extension}',
     "create_directory": lambda dir_name: f'mkdir {dir_name}',
     # Certificates
     "cert_extract_public_key": lambda in_file, out_file: f'{openssl} x509 -pubkey -noout -in {in_file} > {out_file}',
+    "cert_extract_subject_fields": lambda cert_file: f'openssl x509 -in {cert_file} -noout -subject'
 }

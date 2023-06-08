@@ -5,7 +5,7 @@ from utils.bash_util import execute_command
 from utils.keys_util import gen_RSA_keys, export_RSA_pub_key, sign_RSA
 from utils.CA_util import create_CA, sign_cert
 from utils.commands_util import commands
-from utils.certificates_util import require_certificate, concat_cert_and_rand, require_certificate
+from utils.certificates_util import require_certificate_with_given_fields, concat_cert_and_rand
 from utils.hash_util import compute_hash_from_file
 
 class User:
@@ -32,12 +32,14 @@ class User:
             Require the GP certificate.
     """
     
-    def __init__(self,user_name):
-        self.user_name = user_name
-        execute_command(commands["create_directory"](user_name))  
+    def __init__(self,CIE_fields):
+        self.user_name = CIE_fields[0]
+        self.CIE_fields = CIE_fields
+        execute_command(commands["create_directory"](self.user_name))  
         self.__obtain_CIE_keys()
         self.__obtain_CIE_certificate()
         self.GP_certificate = None
+        self.clear_fields = None
 
     def __obtain_CIE_keys(self):
         """
@@ -53,7 +55,7 @@ class User:
         Obtain the CIE certificate from the CIE card.
         """
         create_CA("MdI", "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/MdI.cnf")
-        require_certificate(self.SK, self.user_name+'/'+self.user_name+"_CIE_request.cert", "src/configuration_files/user.cnf")
+        require_certificate_with_given_fields(self.CIE_fields, self.SK, self.user_name+'/'+self.user_name+"_CIE_request.cert", "src/configuration_files/user.cnf")
         sign_cert(self.user_name+'/'+self.user_name+"_CIE_request.cert", self.user_name+'/'+self.user_name+"_CIE_certificate.cert", "src/configuration_files/MdI.cnf")
         self.CIE_certificate =self.user_name+'/'+self.user_name+"_CIE_certificate.cert"
         
@@ -81,6 +83,10 @@ class User:
             GP_csr: string
                 The name of the GP csr file.
         """
-        require_certificate(self.SK, self.user_name+'/'+self.user_name+"_GP_request.csr", "src/configuration_files/user.cnf")
+        GP_fields = ["--"]*6
+        require_certificate_with_given_fields(GP_fields,self.SK, self.user_name+'/'+self.user_name+"_GP_request.csr", "src/configuration_files/user.cnf")
         return self.user_name+'/'+self.user_name+"_GP_request.csr"
 
+    def get_GP(self, GP_certificate, clear_fields):
+        self.GP_certificate = GP_certificate
+        self.clear_fields = clear_fields

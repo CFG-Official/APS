@@ -11,12 +11,12 @@ default_md = sha256
 distinguished_name = dn
 
 [dn]
-CN = Common Name
+CN = Ministero dell?interno
 C = IT
-ST = State
-L = Locality
-O = Organization
-OU = Organizational Unit
+ST = Italia
+L = Roma
+O = Via del Viminale, 1
+OU = MI
 
 [ MdI ]
 dir = MdI
