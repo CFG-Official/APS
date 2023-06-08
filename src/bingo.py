@@ -78,12 +78,4 @@ class Bingo:
         """
         self.GPs.append(GP)
         return  self.__check_CA(GP, "Bingo/AS.cert") and  self.__check_expiration(GP) and self.__check_sign(GP, "Bingo/AS.cert")
-    
-if __name__ == "__main__":
-    with open("sign.txt", "r") as f:
-        sign = f.read()
-        # estract the signature value
-        sign = sign.split("Signature Value:")[1]
-        sign = sign.replace(":", "").replace(" ", "").replace("\n", "")
-        print(sign)
         
