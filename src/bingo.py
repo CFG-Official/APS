@@ -1,0 +1,3 @@
+
+class Bingo:
+    pass
