@@ -57,3 +57,23 @@ def view_auto_certificate(in_file):
             The output of the command.
     """
     return BU.execute_command(commands["auto_cert_view"](in_file))
+
+def concat_cert_and_rand(certificate,rand):
+    """
+    Concatenate the CIE certificate and the random number.
+    """
+    with open(certificate, 'r') as cert_file:
+        cert = cert_file.read()
+    # put the concatenation in another file in the same directory of the certificate
+    with open(certificate.split('.')[0] + "_concat.cert", 'w') as concat_file:
+        concat_file.write(cert + rand)
+    return certificate.split('.')[0] + "_concat.cert"
+
+def extract_public_key(cert_file, out_file):
+    """
+    Extract the public key from a certificate.
+    # Arguments
+        cert_file: The file containing the certificate.
+        out_file: The file to output the public key to.
+    """
+    BU.execute_command(commands["cert_extract_public_key"](cert_file, out_file))

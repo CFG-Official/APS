@@ -2,7 +2,13 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
 
 from utils.CA_util import create_CA
+from utils.keys_util import verify_RSA
 from utils.pseudorandom_util import rand_extract
+from utils.certificates_util import concat_cert_and_rand
+from utils.commands_util import commands
+from utils.bash_util import execute_command
+from utils.hash_util import compute_hash_from_file
+
 
 class AS:
     """
@@ -38,14 +44,37 @@ class AS:
     def send_randomness(self):
         """
         The AS sends a random string to the user.
+        # Returns
+            rand: string
+                The random string.
         """
-        return rand_extract(12, "base64")
+        self.rand = rand_extract(12, "base64")
+        return self.rand
 
-    def obtain_CIE_PK(self, CIE_certificate):
-        pass
-
+    def __obtain_CIE_PK(self, CIE_certificate):
+        """ 
+        Extract the public key from the CIE certificate.
+        # Arguments
+            CIE_certificate: string
+                The name of the CIE certificate file.
+        # Returns
+            CIE_PK: string
+                The PK.
+        """
+        execute_command(commands["cert_extract_public_key"](CIE_certificate, "AS/CIE_PK.pem"))
+        self.PK_user = "AS/CIE_PK.pem"
+    
     def verify_signature(self, CIE_certificate, signature):
         """
         Verify the signature of the user.
+        # Arguments
+            CIE_certificate: string
+                The name of the CIE certificate file.
+            signature: string
+                The name of the signature file.
         """
-        pass
+        self.__obtain_CIE_PK(CIE_certificate)
+        body = concat_cert_and_rand(CIE_certificate,self.rand)
+        compute_hash_from_file(body, 'AS/hashed_concat.cert')
+        print(verify_RSA(self.PK_user, 'AS/hashed_concat.cert', signature))
+        

@@ -12,7 +12,7 @@ def compute_hash_from_data(data):
     """
     return BU.execute_command(commands["compute_hash_from_data"](data)).split('= ')[1].strip()
 
-def compute_hash_from_file(in_file, out_file, hash_alg):
+def compute_hash_from_file(in_file, out_file):
     """ 
     Compute the hash from the given file.
     # Arguments
@@ -23,4 +23,10 @@ def compute_hash_from_file(in_file, out_file, hash_alg):
         hash_alg: string
             The hash algorithm.
     """
-    BU.execute_command(commands["compute_hash_from_file"](in_file, out_file, hash_alg))
+    BU.execute_command(commands["compute_hash_from_file"](in_file, out_file, "-sha3-256"))
+    # modify the output file to remove the part before the = sign
+    with open(out_file, "r") as f:
+        line = f.readline().split('= ')[1].strip()
+    with open(out_file, "w") as f:
+        f.write(line)
+        

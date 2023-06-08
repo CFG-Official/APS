@@ -17,14 +17,14 @@ commands = {
     "rand_view_hex": lambda in_file: f'cat {in_file} | xxd -p',
     "rand_view_base64": lambda in_file: f'cat {in_file} | xxd -p | base64',
     # Hash
-    "compute_hash_from_data": lambda data: f'printf {data} | openssl dgst -sha3-256 -hex',
+    "compute_hash_from_data": lambda data: f'printf {data} | openssl dgst -sha3-256',
     "compute_hash_from_file": lambda in_file, out_file, hash_alg: f'{openssl} dgst -{hash_alg} {in_file} >> {out_file}',
     # RSA keys
     "RSA_priv_key_gen": lambda out_file, num_bits: f'{openssl} genrsa -out {out_file} {num_bits}',
     "RSA_pub_key_export": lambda in_file, out_file: f'{openssl} rsa -pubout -in {in_file} -out {out_file}',
     "RSA_priv_key_view": lambda in_file: f'{openssl} rsa -in {in_file} -text',
     "RSA_pub_key_view": lambda in_file: f'{openssl} rsa -pubin -in {in_file} -text',
-    "RSA_sign": lambda in_file, priv_key_file, signature: f'{openssl} pkeyutl -sign -in {in_file} -inkey {priv_key_file} -out {signature}',
+    "RSA_sign": lambda in_file, priv_key_file, signature: f'{openssl} pkeyutl -sign  -inkey {priv_key_file} -in {in_file} -out {signature}',
     "RSA_verify": lambda in_file, signature, pub_key_file: f'{openssl} pkeyutl -verify -in {in_file} -sigfile {signature} -pubin -inkey {pub_key_file}',
     # ECDSA keys
     "ECDSA_params_gen": lambda name, out_file: f'{openssl} ecparam -name {name} -out {out_file}',
@@ -51,4 +51,6 @@ commands = {
     "sign_certificate": lambda in_file, out_file, config_file: f'{openssl} ca -batch -in {in_file} -out {out_file} -policy policy_anything -config {config_file}',
     "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extensions_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extfile {extensions_file}',
     "create_directory": lambda dir_name: f'mkdir {dir_name}',
+    # Certificates
+    "cert_extract_public_key": lambda in_file, out_file: f'{openssl} x509 -pubkey -noout -in {in_file} > {out_file}',
 }

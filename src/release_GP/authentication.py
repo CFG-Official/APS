@@ -8,7 +8,9 @@ if __name__ == "__main__":
     # The AS sends a random string to the user
     rand = authority.send_randomness()
     # The user sends the CIE certificate and the signature of the concatenation between the cerificate and the random string to the AS
-    
+    cert, signature = alice.send_CIE_and_sign(rand)
+    # The AS verifies the signature of the user
+    authority.verify_signature(cert, signature)
     
     
 

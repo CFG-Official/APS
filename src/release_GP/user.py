@@ -5,7 +5,8 @@ from utils.bash_util import execute_command
 from utils.keys_util import gen_RSA_keys, export_RSA_pub_key, sign_RSA
 from utils.CA_util import create_CA, sign_cert
 from utils.commands_util import commands
-from utils.certificates_util import require_certificate
+from utils.certificates_util import require_certificate, concat_cert_and_rand
+from utils.hash_util import compute_hash_from_file
 
 class User:
     """
@@ -50,12 +51,14 @@ class User:
         create_CA("MdI", "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/MdI.cnf")
         require_certificate(self.SK, self.user_name+'/'+self.user_name+"_CIE_request.cert", "src/configuration_files/user.cnf")
         sign_cert(self.user_name+'/'+self.user_name+"_CIE_request.cert", self.user_name+'/'+self.user_name+"_CIE_certificate.cert", "src/configuration_files/MdI.cnf")
-        self.CIE_certificate = self.user_name+"_CIE_certificate.cert"
-
+        self.CIE_certificate =self.user_name+'/'+self.user_name+"_CIE_certificate.cert"
+        
     def send_CIE_and_sign(self,rand):
         """
         Send the CIE certificate and sign the random number contactenated to the certificate.
         """
-        sign_RSA(self.SK, self.CIE_certificate, self.user_name+"CIE_signature.sign")
-        return self.CIE_certificate, self.user_name+"CIE_signature.sign"
+        body = concat_cert_and_rand(self.CIE_certificate,rand)
+        compute_hash_from_file(body, self.user_name+'/'+self.user_name+"_hashed_concat.cert")
+        sign_RSA(self.SK, self.user_name+'/'+self.user_name+"_hashed_concat.cert", self.user_name+'/'+self.user_name+"_CIE_signature.pem")
+        return self.CIE_certificate, self.user_name+'/'+self.user_name+"_CIE_signature.pem"
 
