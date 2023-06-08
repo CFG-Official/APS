@@ -1,4 +1,4 @@
-rm -r utils/__pycache__/
+rm -r src/utils/__pycache__/
 rm -r __pycache__
 rm -r tests/CA/*
 rm -r tests/certificates/*
