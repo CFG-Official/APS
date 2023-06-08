@@ -14,6 +14,7 @@ if __name__ == "__main__":
     bingo = Bingo()
     # the user sends the GP to the sala bingo
     res = bingo.receive_GP(alice.send_GP()) # sala bingo checks if the CA exists and is trusted, the sign is valid and the GP is valid
+    print(res)
     # validate GP fields
     
     

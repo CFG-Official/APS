@@ -1,4 +1,18 @@
 def authentication(user, authority):
+    
+    """ 
+    Perform the authentication between the user and the AS.
+    # Arguments
+        user: User
+            The user.
+        authority: AS
+            The AS.
+    # Returns
+        cert: string
+            The name of the certificate file.
+        clear_fields: string
+            The clear fields + randomness pairs used to compose the merkle tree (list of tuples).
+    """
 
     # The AS sends a random string to the user
     rand = authority.send_randomness()

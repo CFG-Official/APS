@@ -88,5 +88,13 @@ class User:
         return self.user_name+'/'+self.user_name+"_GP_request.csr"
 
     def get_GP(self, GP_certificate, clear_fields):
+        """
+        Get the GP certificate and the clear fields.
+        # Arguments
+            GP_certificate: string  
+                The name of the GP certificate file.
+            clear_fields: string
+                The clear fields. 
+        """
         self.GP_certificate = GP_certificate
         self.clear_fields = clear_fields

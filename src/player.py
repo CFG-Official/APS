@@ -7,4 +7,10 @@ class Player(User):
     """
     
     def send_GP(self):
+        """ 
+        Send the GP certificate to the sala bingo.
+        # Returns
+            GP_certificate: string
+                The name of the GP certificate file.
+        """
         return self.GP_certificate

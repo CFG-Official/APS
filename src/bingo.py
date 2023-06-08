@@ -2,7 +2,6 @@ import sys, os, datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
 
 from utils.bash_util import execute_command
-from utils.keys_util import verify_ECDSA
 from utils.commands_util import commands
 
 class Bingo:
@@ -12,7 +11,6 @@ class Bingo:
     """
     
     def __init__(self):
-        self.players = {}
         execute_command(commands["create_directory"]("Bingo"))
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
         self.known_CAs = ["Bingo/AS.cert"]
@@ -47,7 +45,6 @@ class Bingo:
                 True if the sign is valid, False otherwise.
         """
         res = execute_command(commands["validate_certificate"](AS_cert, GP_cert)).split(" ")[1].replace("\n", "").replace(" ", "")
-
         return True if res == "OK" else False
     
     def __check_expiration(self, GP_cert):
@@ -77,5 +74,9 @@ class Bingo:
                 True if the GP is valid, False otherwise.
         """
         self.GPs.append(GP)
-        return  self.__check_CA(GP, "Bingo/AS.cert") and  self.__check_expiration(GP) and self.__check_sign(GP, "Bingo/AS.cert")
+        if self.__check_CA(GP, self.known_CAs[0]) and  self.__check_expiration(GP) and self.__check_sign(GP, self.known_CAs[0]):
+            self.GPs.append(GP)
+            return True
+        return False
+
         

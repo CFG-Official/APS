@@ -1,4 +1,3 @@
-# pip install cryptography
 import sys, os, datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
 
@@ -120,7 +119,6 @@ class AS:
             CIE_certificate: string
                 The name of the CIE certificate file.
         # Returns
-
             pairs: list
                 The list of the pairs (value, rand) used to compose the merkle tree.
                 
@@ -130,7 +128,7 @@ class AS:
         self.__generate_user_data(CIE_certificate)
         
         hashed_fields = []
-        pairs = []
+        pairs = [] # list of (data, rand) tuples
         for field in self.user_data.values():
             # hash the data concatenated with the random string
             data, rand, value = hash_concat_data_and_rand(self.security_param,field)
@@ -150,7 +148,7 @@ class AS:
             cert: string
                 The name of the certificate file.
             clear_fields: string
-                The name of the clear fields file.
+                The clear fields + randomness pairs.
         """
         name = csr.split('_')[0]
         pairs, root = self.__compose_merkle_tree(self.CIE_certificate)
