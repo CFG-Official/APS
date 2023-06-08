@@ -1,4 +1,4 @@
-# File di configurazione per la Root CA "MdI"
+# File di configurazione per la Root CA "AS"
 
 [ ca ]
 default_ca = AS
@@ -18,7 +18,7 @@ L = Locality
 O = Organization
 OU = Organizational Unit
 
-[ MdI ]
+[ AS ]
 dir = AS
 certificate = $dir/auto_certificate.cert
 private_key = $dir/private/private_key.pem

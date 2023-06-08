@@ -1,14 +1,13 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
 
-from utils.CA_util import create_CA
+from utils.CA_util import create_CA, sign_cert
 from utils.keys_util import verify_RSA
 from utils.pseudorandom_util import rand_extract
 from utils.certificates_util import concat_cert_and_rand
 from utils.commands_util import commands
 from utils.bash_util import execute_command
 from utils.hash_util import compute_hash_from_file
-
 
 class AS:
     """
@@ -20,6 +19,10 @@ class AS:
             The name of the public key file.
         SK: string
             The name of the private key file.
+        PK_user: string
+            The name of the user public key file.
+        rand: string
+            The random string used for to mark the interaction with the user.
     # Methods
         send_randomness()
             The AS sends a random string to the user.
@@ -27,6 +30,8 @@ class AS:
             Obtain the CIE public key.
         verify_signature(CIE_certificate, signature)
             Verify the signature of the user.
+        release_GP_certificate()
+            Release the GP certificate.
     """
     
     def __init__(self):
@@ -77,4 +82,21 @@ class AS:
         body = concat_cert_and_rand(CIE_certificate,self.rand)
         compute_hash_from_file(body, 'AS/hashed_concat.cert')
         print(verify_RSA(self.PK_user, 'AS/hashed_concat.cert', signature))
+        
+    def release_GP(self,csr):
+        """ 
+        Release the GP.
+        # Arguments
+            csr: string
+                The name of the CSR file.
+        # Returns
+            cert: string
+                The name of the certificate file.
+            clear_fields: string
+                The name of the clear fields file.
+        """
+        name = csr.split('_')[0]
+        sign_cert(csr, name+"_GP.cert", "src/configuration_files/AS.cnf")
+        return name+'/'+name+"_GP.cert", None
+    
         

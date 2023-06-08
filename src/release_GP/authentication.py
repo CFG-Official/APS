@@ -12,6 +12,11 @@ if __name__ == "__main__":
     # The AS verifies the signature of the user
     authority.verify_signature(cert, signature)
     
+    # The user sends the CSR to the AS
+    GP_csr = alice.require_GP()
+    cert, clear_fields = authority.release_GP(GP_csr)
+    
+    
     
 
 
