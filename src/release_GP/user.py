@@ -37,7 +37,6 @@ class User:
     def __obtain_CIE_keys(self):
         """
         Obtain the CIE keys.
-        
         """
         gen_RSA_keys(2048, self.user_name + "/private_key.pem")
         export_RSA_pub_key(self.user_name + "/private_key.pem", self.user_name + "/public_key.pem")
@@ -56,6 +55,14 @@ class User:
     def send_CIE_and_sign(self,rand):
         """
         Send the CIE certificate and sign the random number contactenated to the certificate.
+        # Arguments
+            rand: string
+                The random number.
+        # Returns
+            CIE_certificate: string
+                The name of the CIE certificate file.
+            CIE_signature: string
+                The name of the CIE signature file.
         """
         body = concat_cert_and_rand(self.CIE_certificate,rand)
         compute_hash_from_file(body, self.user_name+'/'+self.user_name+"_hashed_concat.cert")
