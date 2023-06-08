@@ -64,7 +64,7 @@ elif test == "CA":
     # Requires CA cert and key generation
     folder = folder + "CA/"
     # Create CA
-    CAU.create_CA(folder+"testCA", "tests/keys/privKey.pem", "tests/keys/pubKey.pem", folder+"testCA.cert", "prime256v1", "tests/keys/param.pem", 365, "src/configuration_files/base_config.cnf")
+    CAU.create_CA(folder+"testCA", "tests/keys/privKey.pem", "tests/keys/pubKey.pem", folder+"testCA.cert", "src/configuration_files/base_config.cnf")
     #CAU.sign_cert("tests/certificates/csr.pem", folder+"autoCert.cert", "src/configuration_files/testCA_config.cnf")
     CAU.sign_cert_with_extension("tests/certificates/csr.pem", folder+"autoCert.cert", "src/configuration_files/testCA_config.cnf", "src/configuration_files/extensions.cnf")
     

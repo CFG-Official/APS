@@ -5,6 +5,8 @@
 openssl = "openssl" # insert the path to your openssl executable here
 
 commands = {
+    # Permissions
+    "give_permissions": lambda file: f'chmod 777 {file}',
     # Randomness extraction
     "rand_extract": lambda encode, num_bytes: f'{openssl} rand {encode} {num_bytes}',
     "rand_view": lambda in_file, decode: f'cat {in_file}',
@@ -46,6 +48,7 @@ commands = {
     "move_CA_cert": lambda ca_name, cert_file: f'mv {cert_file} {ca_name}',
     "move_CA_key": lambda ca_name, priv_key_file: f'mv {priv_key_file} {ca_name}/private',
     # CA sign CSR
-    "sign_certificate": lambda in_file,out_file,config_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file}',
+    "sign_certificate": lambda in_file, out_file, config_file: f'{openssl} ca -batch -in {in_file} -out {out_file} -policy policy_anything -config {config_file}',
     "sign_certificate_with_extensions": lambda in_file,out_file,config_file,extensions_file: f'{openssl} ca -in {in_file} -out {out_file} -policy policy_anything -config {config_file} -extfile {extensions_file}',
+    "create_directory": lambda dir_name: f'mkdir {dir_name}',
 }

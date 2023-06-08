@@ -3,9 +3,9 @@ import utils.keys_util as KU
 import utils.bash_util as BU
 from utils.commands_util import commands
 
-def create_CA(ca_name, priv_key_file, pub_key_file, out_file, curve_name, param_file, days, config_file):
+def create_CA(ca_name, priv_key_file, pub_key_file, out_file, config_file):
     """ 
-    Create a CA with the given name, private key, public key, output file, curve name, parameter file, days and config file.
+    Create a CA with the given name, private key, public key, output file and config file.
     # Arguments
         ca_name: string
             The name of the CA.
@@ -15,12 +15,6 @@ def create_CA(ca_name, priv_key_file, pub_key_file, out_file, curve_name, param_
             The name of the public key file.
         out_file: string
             The name of the output file.
-        curve_name: string
-            The name of the curve.
-        param_file: string
-            The name of the parameter file.
-        days: int
-            The number of days.
         config_file: string
             The name of the config file.
     """
@@ -31,12 +25,12 @@ def create_CA(ca_name, priv_key_file, pub_key_file, out_file, curve_name, param_
     BU.execute_command(commands["create_CA_index_file"](ca_name))
     BU.execute_command(commands["create_CA_serial_file"](ca_name))
     # Generate the CA key
-    KU.gen_ECDSA_keys(curve_name, param_file, priv_key_file, pub_key_file)
+    KU.gen_ECDSA_keys("prime256v1", ca_name+"/param.pem", ca_name+'/'+priv_key_file, ca_name+'/'+pub_key_file)
     # Generate the CA certificate
-    CU.auto_sign_certificate(days, priv_key_file, out_file, config_file)
+    CU.auto_sign_certificate(365, ca_name+'/'+priv_key_file, ca_name+'/'+out_file, config_file)
     # Move the CA certificate and key to the CA folder
-    BU.execute_command(commands["move_CA_cert"](ca_name, out_file))
-    BU.execute_command(commands["move_CA_key"](ca_name, priv_key_file))
+    # BU.execute_command(commands["move_CA_cert"](ca_name, out_file))
+    BU.execute_command(commands["move_CA_key"](ca_name, ca_name+'/'+priv_key_file))
     
 def sign_cert(in_file,out_file,config_file):
     """ 

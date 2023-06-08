@@ -1,7 +1,7 @@
-# File di configurazione per la Root CA "testCA"
+# File di configurazione per la Root CA "MdI"
 
 [ ca ]
-default_ca = testCA
+default_ca = MdI
 
 [req]
 default_bits = 2048
@@ -18,10 +18,10 @@ L = Locality
 O = Organization
 OU = Organizational Unit
 
-[ testCA ]
-dir = tests/CA/testCA
-certificate = $dir/testCA.cert
-private_key = $dir/private/privKey.pem
+[ MdI ]
+dir = MdI
+certificate = $dir/auto_certificate.cert
+private_key = $dir/private/private_key.pem
 new_certs_dir = $dir/certs
 database = $dir/index.txt
 serial = $dir/serial
