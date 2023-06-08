@@ -68,8 +68,9 @@ elif test == "CA":
     CAU.sign_cert_with_extension("tests/certificates/csr.pem", folder+"autoCert.cert", "configuration_files/testCA_config.cnf", "configuration_files/extensions.cnf")
     
 elif test == "rand":
-    PRG.pseudo_random_gen("palle.hex",24,"base64")
-    print(PRG.pseudo_random_view("palle.hex","base64"))
+    
+    rand = PRG.rand_extract(1,"base64")
+    print(PRG.convert_rand_to_num(rand, "base64"))
     
 elif test == "hash":
     

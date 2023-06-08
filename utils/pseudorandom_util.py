@@ -1,21 +1,44 @@
+import base64
 import utils.bash_util as BU
 from utils.commands_util import commands
 
-def pseudo_random_gen(out_file:str, bytes:int, encode:str):
+def rand_extract(bytes:int, encode:str):
     """
         Generates a pseudo random number.
         # Arguments
             out_file: The file to output the pseudo random number to.
             bytes: The number of bytes to generate.
+        # Returns
+            The pseudo random number.
+        # Raises
+            ValueError: If the encoding is invalid.
     """
-    enc = ""
+    enc = "-hex"
     encode = encode.lower()
 
     if encode== "hex" or encode == "base64":
         enc = "-"+encode
-
-    BU.execute_command(commands["rand_extract"](out_file, bytes, enc))
-
+        return (BU.execute_command(commands["rand_extract"](enc,bytes)))
+    else:
+        raise ValueError("Invalid encoding")
+    
+def convert_rand_to_num(string:str, encode:str):
+    """
+        Converts a pseudo random number to a number.
+        # Arguments
+            string: The string to convert.
+            encode: The encoding of the string.
+        # Returns
+            The converted number.
+        # Raises
+            ValueError: If the encoding is invalid.
+    """
+    if encode == "hex":
+        return int(string, 16)
+    elif encode == "base64":
+        return int.from_bytes(base64.b64decode(string), byteorder='big', signed=False)
+    else:
+        raise ValueError("Invalid encoding")
 
 def pseudo_random_view(in_file,decode:str):
     """
@@ -33,7 +56,6 @@ def pseudo_random_view(in_file,decode:str):
     elif decode == "base64":
         dec = "m"
     
-
     return BU.execute_command(commands["rand_view"](in_file, dec))
 
 

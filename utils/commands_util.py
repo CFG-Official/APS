@@ -6,11 +6,11 @@ openssl = "openssl" # insert the path to your openssl executable here
 
 commands = {
     # Randomness extraction
-    #"rand_extract_bin": lambda out_file, num_bytes: f'{openssl} rand -out {out_file} {num_bytes}',
-    #"rand_extract_hex": lambda out_file, num_bytes: f'{openssl} rand -hex {num_bytes} >> {out_file}',
-    #"rand_extract_base64": lambda out_file, num_bytes: f'{openssl} rand -base64 {num_bytes} >> {out_file}',
-    "rand_extract": lambda out_file, num_bytes, encode: f'{openssl} rand {encode} -out {out_file} {num_bytes}',
+    "rand_extract": lambda encode, num_bytes: f'{openssl} rand {encode} {num_bytes}',
     "rand_view": lambda in_file, decode: f'cat {in_file}',
+    "rand_extract_bin": lambda out_file, num_bytes: f'{openssl} rand -out {out_file} {num_bytes}',
+    "rand_extract_hex": lambda out_file, num_bytes: f'{openssl} rand -hex {num_bytes} >> {out_file}',
+    "rand_extract_base64": lambda out_file, num_bytes: f'{openssl} rand -base64 {num_bytes} >> {out_file}',
     "rand_view_bin": lambda in_file: f'cat {in_file} | xxd -b',
     "rand_view_hex": lambda in_file: f'cat {in_file} | xxd -p',
     "rand_view_base64": lambda in_file: f'cat {in_file} | xxd -p | base64',
