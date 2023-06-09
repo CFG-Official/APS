@@ -11,7 +11,7 @@ def authentication(user, authority):
         cert: string
             The name of the certificate file.
         clear_fields: string
-            The clear fields + randomness pairs used to compose the merkle tree (list of tuples).
+            The clear fields + randomness pairs used to compose the merkle tree (dictionray of tuples).
     """
 
     # The AS sends a random string to the user

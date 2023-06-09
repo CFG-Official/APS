@@ -94,7 +94,7 @@ class AS:
         self.user_data = {
             "Nome": pairs[4], 
             "Data di nascita": pairs[2],
-            "Tipo di Vaccino": "Pfizer",
+            "Tipo di vaccino": "Pfizer",
             "Data di vaccinazione": str(datetime.date.today()),
         }
     
@@ -119,8 +119,8 @@ class AS:
             CIE_certificate: string
                 The name of the CIE certificate file.
         # Returns
-            pairs: list
-                The list of the pairs (value, rand) used to compose the merkle tree.
+            pairs: dict
+                The dictionary of the pairs (value, rand) used to compose the merkle tree.
                 
             The root of the merkle tree.
         """
@@ -128,11 +128,11 @@ class AS:
         self.__generate_user_data(CIE_certificate)
         
         hashed_fields = []
-        pairs = [] # list of (data, rand) tuples
-        for field in self.user_data.values():
+        pairs = {} # dict of (data, rand) tuples
+        for name, field in self.user_data.items():
             # hash the data concatenated with the random string
             data, rand, value = hash_concat_data_and_rand(self.security_param,field)
-            pairs.append((data, rand))
+            pairs[name] = (data, rand)
             hashed_fields.append(value)
             
         # compose the merkle tree with the user data

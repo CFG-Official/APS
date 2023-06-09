@@ -1,6 +1,6 @@
 from player import Player
 from bingo import Bingo
-
+from DPA import DPA
 from AS import AS
 
 from AS_authentication import authentication
@@ -15,7 +15,14 @@ if __name__ == "__main__":
     # the user sends the GP to the sala bingo
     res = bingo.receive_GP(alice.send_GP()) # sala bingo checks if the CA exists and is trusted, the sign is valid and the GP is valid
     print(res)
-    # validate GP fields
+    # DPA chooses the daily policy
+    dpa = DPA()
+    policy = dpa.choose_policy()
+    print(policy)
+    # validate GP fields according to the daily policy
+    bingo.receive_clear_fields(alice.send_clear_fields(policy))
+    
+    
     
     
     

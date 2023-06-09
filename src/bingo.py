@@ -74,9 +74,29 @@ class Bingo:
                 True if the GP is valid, False otherwise.
         """
         self.GPs.append(GP)
-        if self.__check_CA(GP, self.known_CAs[0]) and  self.__check_expiration(GP) and self.__check_sign(GP, self.known_CAs[0]):
+        if self.__check_CA(GP, self.known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self.known_CAs[0]):
             self.GPs.append(GP)
             return True
         return False
 
+    def __validate_clear_fields(self, policy, clear_fields):
+        # verify if the keys of clear fields and the policy are the same
+        
+        # length check
+        if len(policy) != len(clear_fields):
+            return False
+        
+        # key check
+        for item in policy:
+            if item not in clear_fields.keys():
+                return False
+            
+        # value check with merkle proofs
+        
+            
+        return True
+
+    def receive_clear_fields(self,policy,clear_fields):
+        
+        return self.__validate_clear_fields(policy,clear_fields)
         
