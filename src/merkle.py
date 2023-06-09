@@ -57,10 +57,8 @@ def verify_proof(root, proof, leaf, index):
         proof = [(HU.compute_hash_from_data(proof[0][0] + leaf), __parent_index(index))] + proof[1:]
     else: # Se la foglia è fratello sinistro
         proof = [(HU.compute_hash_from_data(leaf + proof[0][0]), __parent_index(index))] + proof[1:]
-
-    calculated = __verify_proof_aux(proof)[0][0]
-    print(calculated)
-    return root == calculated
+        
+    return root == __verify_proof_aux(proof)[0][0]
 
 def __verify_proof_aux(proof):
     
@@ -113,9 +111,9 @@ print("PRIMO LIVELLO DELL'ALBERO")
 print(leaves)
 
 # Calcolo la prova di Merkle per la foglia con indice 2.
-proof = merkle_proof(leaves, 2)
+proof = merkle_proof(leaves, 0)
 print("PROVA DI MERKLE")
 print(proof)
 
 print("ESITO VERIFICA PROOF")
-print(verify_proof(root, proof, leaves[2], 2))
+print(verify_proof(root, proof, leaves[0], 0))
