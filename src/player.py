@@ -258,6 +258,7 @@ class Player(User):
             true if the signature is valid, false otherwise.
         """
         temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
+        
         self._contr_comm = pairs
 
         concat = ""
@@ -286,6 +287,12 @@ class Player(User):
         return self.last_contribute, self.last_randomess
 
     def __compute_final_string(self):
+        """
+        Compute the final string constructed by the concatenation of all the openings sorted by player ID.
+        # Returns
+            final_string: string
+                The final string.
+        """
         # hash the concatenation of all the openings
         concat = ""
         for opening in self._contr_open:
