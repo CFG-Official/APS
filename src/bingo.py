@@ -87,7 +87,7 @@ class Bingo:
         # find the 'X509v3 Subject Alternative Name:' string and extract the root
         return text.split("X509v3 Subject Alternative Name:")[1].split("DNS:")[1].split("\n")[0].encode('utf-8').decode('unicode_escape')
 
-    def __validate_clear_fields(self, policy, clear_fields):
+    def __validate_clear_fields(self, policy, clear_fields, proofs, indices):
         
         # length check
         if len(policy) != len(clear_fields):
@@ -98,25 +98,24 @@ class Bingo:
             if item not in clear_fields.keys():
                 return False
             
-        # value check with merkle proofs
-        leaves = []
-        for value in clear_fields.values():
-            # append the hashed value of the concatenation between the value and the randomness
-            leaves.append(hash_concat_data_and_known_rand(value[0],value[1]))
+        root = self.__extract_root(self.GPs[0])
             
-        # verify the merkle proofs for each leaf
-        for index in range(len(leaves)):
-            proof = merkle_proof(leaves, index)
-            print("PROOF:",proof)
-            res = verify_proof(self.__extract_root(self.GPs[0]), proof, leaves[index], index)
+        # value check with merkle proofs
+        leaves = {}
+        for key, value in clear_fields.items():
+            # append the hashed value of the concatenation between the value and the randomness
+            leaves[key] = hash_concat_data_and_known_rand(value[0],value[1])
+            
+        for key, value in proofs.items():
+            res = verify_proof(root, value, leaves[key], indices[key])
             if not res:
                 return False
             
         return True
 
-    def receive_clear_fields(self,policy,clear_fields):
+    def receive_clear_fields(self,policy,clear_fields, proofs, indices):
         # verify if the keys of clear fields and the policy are the same
-        return self.__validate_clear_fields(policy,clear_fields)
+        return self.__validate_clear_fields(policy,clear_fields, proofs, indices)
         
 
     
