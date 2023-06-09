@@ -174,7 +174,7 @@ class Player(User):
         # Compute the PRF output
         prf_output = execute_command(commands["get_prf_value"](self.seed, self.IV)).split('= ')[1].strip()
         # Update the IV
-        self.IV = (self.IV + 1) % self.security_param
+        self.IV = (self.IV + 1) % 2*self.security_param
 
         # Divide output in two equal parts: the first is the contribution, the second is the randomness used to commit
         self.last_contribute = prf_output[:len(prf_output)//2]
@@ -225,29 +225,28 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
-        concat = ""
-        for param in self.last_message[0]:
-            concat += param
-        concat += self.last_message[1]
-        concat += self.last_message[2]
-
-        
-
         temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
 
+        # concat = ""
+        # for param in self.last_message[0]:
+        #     concat += param
+        # concat += self.last_message[1]
+        # concat += self.last_message[2]
+
         with open(temp_filename, "w") as f: 
-            f.write(concat)
+            f.write(concatenate(*self.last_message[0], self.last_message[1], self.last_message[2]))
         
         if verify_ECDSA(self._bingo_PK, temp_filename, signature):
             self._bingo_sign_on_comm = signature
             return True
+        
         return False
     
     def receive_commitments_and_signature(self, pairs, signature):
         """
-        The player receives the commitments, the parameters and the 
-        signature of the sala bingo on them. Then it verifies the 
-        signature.
+        The player receives the commitments, the parameters of other player
+        and the signature of the sala bingo on them. 
+        Then it verifies the server signature.
         
         # Arguments
             pairs: list
@@ -258,17 +257,23 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
+        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
         self._contr_comm = pairs
+
         concat = ""
         for pair in pairs:
             for param in pair[0]:
                 concat += param
             concat += pair[1]
-        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+        
+        with open(temp_filename, "w") as f:
             f.write(concat)
-        if verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature):
+
+        # Verify that the received signature is valid
+        if verify_ECDSA(self._bingo_PK, temp_filename, signature):
             self._bingo_sign_on_comm = signature
             return True
+        
         return False
     
     def send_opening(self):
