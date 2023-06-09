@@ -4,7 +4,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.bash_util import execute_command
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand
+from utils.certificates_util import extract_public_key
 from merkle import merkle_proof, verify_proof
+from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA
 
 class Bingo:
     
@@ -17,6 +19,11 @@ class Bingo:
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
         self.known_CAs = ["Bingo/AS.cert"]
         self.GPs = []
+        gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
+        self.SK = "Bingo/private_key.pem"
+        self.PK = "Bingo/public_key.pem"
+        
+    # AUTHENTICATION
         
     def __check_CA(self, GP_cert, CA_cert):
         """ 
@@ -117,5 +124,69 @@ class Bingo:
         # verify if the keys of clear fields and the policy are the same
         return self.__validate_clear_fields(policy,clear_fields, proofs, indices)
         
-
+    # GAME
+        
+    def receive_commitment(self, params, commitment, signature):
+        """ 
+        The sala bingo receives the commitment, the signature and the 
+        additional parameters from the user. It verifies the signature
+        of the user on the commitment and the additional parameters.
+        If it is valid, it computes its signature on all of them and 
+        returns it to the user.
+        # Arguments
+            params: list
+                The list of additional parameters.
+            commitment: string
+                The commitment.
+            signature: string
+                The signature of the user on the commitment and the additional parameters.
+        # Returns
+            signature: string
+                The signature of the sala bingo on the additional parameters and the commitment.
+        """
+        # concatenate params and commitment
+        concat = ""
+        for param in params:
+            concat += param
+        concat += commitment
+        # verify the signature of the user on the commitment and the additional parameters
+        # using the PK contained in the GP certificate
+        extract_public_key(self.GPs[0], "Bingo/GP_PK.pem")
+        with open("Bingo/concat.txt", "w") as f:
+            f.write(concat)
+        if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", signature):
+            # compute the signature of the sala bingo on all of them
+            sign_ECDSA(self.SK, "Bingo/concat.txt", "Bingo/signature.pem")
+            return "Bingo/signature.pem"
+        return None
+            
     
+    def publish_commitments_and_signature(self):
+        """ 
+        Once it has received all the commitments, the sala bingo publishes
+        them and its signature on them.
+        
+        # Returns
+            commitments: list
+                The list of commitments.
+            signature: string
+                The signature of the sala bingo on the commitments.
+        """
+        pass
+    
+    def receive_opening(self, opening):
+        """ 
+        The sala bingo receives the opening from the user.
+        """
+        pass
+
+    def publish_openings(self):
+        """ 
+        Once received all the openings, the sala bingo computes the
+        final string and publishes the openings as (message, randomness) 
+        pairs.
+        # Returns
+            openings: list
+                The list of openings.
+        """
+        pass

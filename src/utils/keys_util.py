@@ -54,6 +54,16 @@ def sign_ECDSA(priv_key_file, data_file, signature_file):
     """
     BU.execute_command(commands["ECDSA_sign"](data_file, priv_key_file, signature_file))
 
+def sign_ECDSA_from_variable(priv_key_file, data_variable):
+    """ 
+    Sign a file with the given private key.
+    # Arguments
+        priv_key_file: The file to read the private key from.
+        data_variable: The variable to sign.
+        signature_file: The file to store the signature in.
+    """
+    return BU.execute_command(commands["ECDSA_sign_variable"](data_variable, priv_key_file))
+
 def verify_ECDSA(pub_key_file, data_file, signature_file):
     """
     Verify a file with the given public key.
@@ -124,3 +134,8 @@ def verify_RSA(pub_key_file, data_file, signature_file):
         signature_file: The file to read the signature from.
     """ 
     return BU.execute_command(commands["RSA_verify"](data_file, signature_file, pub_key_file))
+
+def concatenate(*args):
+    risultato = ''.join(args)
+    return risultato
+
