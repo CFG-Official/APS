@@ -36,7 +36,7 @@ class Player(User):
             GP_certificate: string
                 The name of the GP certificate file.
         """
-        return self.GP_certificate
+        return self._GP_certificate
 
     def set_PK_bingo(self, bingo_PK):
         """ 
@@ -48,7 +48,7 @@ class Player(User):
         self._bingo_PK = bingo_PK
         
     def get_name(self):
-        return self.user_name
+        return self._user_name
     
     def __compute_proofs(self, policy):
         # value check with merkle proofs
@@ -56,7 +56,7 @@ class Player(User):
         leaves = []
         indices = {}
         index = 0
-        for key, value in self.clear_fields.items():
+        for key, value in self._clear_fields.items():
             # append the hashed value of the concatenation between the value and the randomness
             leaves.append(hash_concat_data_and_known_rand(value[0],value[1]))
             indices[key] = index
@@ -91,7 +91,7 @@ class Player(User):
         """
         # return the fields values whose key is in the policy
         proofs, indices = self.__compute_proofs(policy)
-        return {key: self.clear_fields[key] for key in policy}, proofs, indices    
+        return {key: self._clear_fields[key] for key in policy}, proofs, indices    
     
     # GAME    
 
@@ -142,11 +142,11 @@ class Player(User):
         return compute_hash_from_data(self.last_contribute + self.last_randomess)
     
     def __sign_message(self, message):
-        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+        with open(self._user_name+'/'+self._user_name+"_temp.txt", "w") as f:
             f.write(message)
         # sign the message
-        sign_ECDSA(self.SK, self.user_name+'/'+self.user_name+"_temp.txt", self.user_name+'/'+self.user_name+'_comm_sign.pem')
-        return self.user_name+'/'+self.user_name+'_comm_sign.pem'
+        sign_ECDSA(self._SK, self._user_name+'/'+self._user_name+"_temp.txt", self._user_name+'/'+self._user_name+'_comm_sign.pem')
+        return self._user_name+'/'+self._user_name+'_comm_sign.pem'
         #return sign_ECDSA_from_variable(self.SK, message).split("= ")[1].strip()
     
     def send_commitment(self):
@@ -179,9 +179,9 @@ class Player(User):
             concat += param
         concat += self.last_message[1]
         concat += self.last_message[2]
-        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f: 
+        with open(self._user_name+'/'+self._user_name+"_temp.txt", "w") as f: 
             f.write(concat)
-        if verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature):
+        if verify_ECDSA(self._bingo_PK, self._user_name+'/'+self._user_name+"_temp.txt", signature):
             self._bingo_sign_on_comm = signature
             return True
         return False
@@ -207,9 +207,9 @@ class Player(User):
             for param in pair[0]:
                 concat += param
             concat += pair[1]
-        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+        with open(self._user_name+'/'+self._user_name+"_temp.txt", "w") as f:
             f.write(concat)
-        if verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature):
+        if verify_ECDSA(self._bingo_PK, self._user_name+'/'+self._user_name+"_temp.txt", signature):
             self._bingo_sign_on_comm = signature
             return True
         return False
@@ -252,9 +252,9 @@ class Player(User):
                 for param in contr[0]:
                     concat += param
                 concat += contr[1] + opening[0] + opening[1]
-            with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+            with open(self._user_name+'/'+self._user_name+"_temp.txt", "w") as f:
                 f.write(concat)
-            res = verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature)
+            res = verify_ECDSA(self._bingo_PK, self._user_name+'/'+self._user_name+"_temp.txt", signature)
             self._final_string = self.__compute_final_string()
             return res
         else:

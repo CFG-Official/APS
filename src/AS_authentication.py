@@ -13,7 +13,7 @@ def authentication(user, authority):
         clear_fields: string
             The clear fields + randomness pairs used to compose the merkle tree (dictionray of tuples).
     """
-
+    print("-- ESTABILISHED TLS CONNECTION --")
     # The AS sends a random string to the user
     rand = authority.send_randomness()
     # The user sends the CIE certificate and the signature of the concatenation between the cerificate and the random string to the AS
