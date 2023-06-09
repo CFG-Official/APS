@@ -6,7 +6,7 @@ from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand
 from utils.certificates_util import extract_public_key
 from merkle import merkle_proof, verify_proof
-from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA
+from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA, concatenate
 from utils.hash_util import compute_hash_from_data
 
 class Bingo:
@@ -31,6 +31,13 @@ class Bingo:
         
     # AUTHENTICATION
     def get_PK(self):
+        """
+        Get the public key of the sala bingo.
+        # Returns
+            string
+                The public key of the sala bingo.
+        """
+
         return self._PK
         
     def __check_CA(self, GP_cert, CA_cert):
@@ -45,8 +52,11 @@ class Bingo:
             boolean
                 True if the CA is known, False otherwise.
         """
+
         issuer = execute_command(commands["cert_extract_issuer"](GP_cert))
         subject = execute_command(commands["cert_extract_subject"](CA_cert))
+
+        known_subjects = [execute_command(commands["cert_extract_subject"](CA)) for CA in self._known_CAs]
         return issuer == subject
         
     def __check_sign(self, GP_cert, AS_cert):
@@ -61,6 +71,7 @@ class Bingo:
             boolean
                 True if the sign is valid, False otherwise.
         """
+
         res = execute_command(commands["validate_certificate"](AS_cert, GP_cert)).split(" ")[1].replace("\n", "").replace(" ", "")
         return True if res == "OK" else False
     
@@ -74,10 +85,12 @@ class Bingo:
             boolean
                 True if the GP is not expired, False otherwise.
         """
+
         expiration_date = execute_command(commands["cert_extract_expiration_date"](GP_cert)).split("=")[1]
         expiration_date = datetime.datetime.strptime(expiration_date.removesuffix("\n"), "%b %d %H:%M:%S %Y %Z")
         current_date = datetime.datetime.now()
         days_left = (expiration_date - current_date).days
+
         return True if days_left > 0 else False
     
     def receive_GP(self, GP):
@@ -90,20 +103,50 @@ class Bingo:
             boolean
                 True if the GP is valid, False otherwise.
         """
-        self._GPs.append(GP)
+        if GP is None:
+            raise Exception("GP is None")
+
+        #self._GPs.append(GP) DUPLICE AGGIUNTA
+
         if self.__check_CA(GP, self._known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self._known_CAs[0]):
             self._GPs.append(GP)
             return True
         return False
     
     def __extract_root(self, GP_cert):
-        # extract the root from the GP certificate
+        """
+        Extract the root from the GP certificate.
+        # Arguments
+            GP_cert: string
+                The name of the GP certificate file.
+        # Returns
+            string
+                The root of the GP certificate.
+        """
+
         text = execute_command(commands["cert_extract_merkle_root"](GP_cert))
+        
         # find the 'X509v3 Subject Alternative Name:' string and extract the root
         return text.split("X509v3 Subject Alternative Name:")[1].split("DNS:")[1].split("\n")[0].encode('utf-8').decode('unicode_escape')
 
     def __validate_clear_fields(self, policy, clear_fields, proofs, indices):
-        
+        """
+        Perform a validation of the clear fields sent by the user.
+
+        # Arguments
+            policy: list
+                The policy of the DPA.
+            clear_fields: dict
+                The clear fields sent by the user. key: field name, value: (value, randomness)
+            proofs: dict
+                The merkle proofs of the clear fields. key: field name, value: list of hashes
+            indices: dict
+                The indices of the clear fields.
+        # Returns
+            boolean
+                True if the clear fields are valid, False otherwise. 
+        """
+
         # length check
         if len(policy) != len(clear_fields):
             return False
@@ -123,12 +166,28 @@ class Bingo:
             
         for key, value in proofs.items():
             res = verify_proof(root, value, leaves[key], indices[key])
+            ### AGGIUNGERE VALIDAZIONE VALORE DEI CAMPI ###
             if not res:
                 return False
             
         return True
 
     def receive_clear_fields(self,policy,clear_fields, proofs, indices):
+        """
+        Receive the clear fields from the user.
+        # Arguments
+            policy: list
+                The policy of the DPA.
+            clear_fields: dict
+                The clear fields sent by the user. key: field name, value: (value, randomness)
+            proofs: dict
+                The merkle proofs of the clear fields. key: field name, value: list of hashes
+            indices: dict
+                The indices of the clear fields.
+        # Returns
+            boolean
+                True if the clear fields are valid, False otherwise.
+        """
         # verify if the keys of clear fields and the policy are the same
         return self.__validate_clear_fields(policy,clear_fields, proofs, indices)
         
@@ -153,10 +212,14 @@ class Bingo:
                 The signature of the sala bingo on the additional parameters and the commitment.
         """
         # concatenate params and commitment
-        concat = ""
-        for param in params:
-            concat += param
-        concat += commitment
+
+        # concat = ""
+        # for param in params:
+        #     concat += param
+        # concat += commitment
+
+        concat = concatenate(*params, commitment)
+
         # verify the signature of the user on the commitment and the additional parameters
         # using the PK contained in the GP certificate
         extract_public_key(self._GPs[0], "Bingo/GP_PK.pem")
@@ -184,30 +247,49 @@ class Bingo:
                 The signature of the sala bingo on the concatenation between the params
                 and the commitment.
         """
+
         concat = ""
         for contr in self._contr_comm:
             for param in contr[0]:
                 concat += param
             concat += contr[1] # params + commitment
+
         with open("Bingo/concat.txt", "w") as f:
             f.write(concat) 
+
         sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+
         return self._contr_comm, "Bingo/signature.pem"
     
     def receive_opening(self, contribution, randomness):
         """ 
         The sala bingo receives the opening from the user.
         """
+        # append the opening to the list of openings
         self._contr_open.append((contribution, randomness))
         
     def __compute_final_string(self):
+        """
+        Compute the final string based on the concatenation of all the openings.
+
+        # Returns
+            string
+                The final string.
+        """
         # hash the concatenation of all the openings
         concat = ""
         for opening in self._contr_open:
             concat += opening[0]
+        
         return compute_hash_from_data(concat)
 
     def __verify_commitments(self):
+        """
+        Verify the commitments received from the user.
+        # Returns
+            boolean
+                True if the commitments are valid, False otherwise.
+        """
         # verify the commitments
         for contr, opening in zip(self._contr_comm, self._contr_open):
             if contr[1] != hash_concat_data_and_known_rand(opening[0], opening[1]):

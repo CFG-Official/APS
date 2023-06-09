@@ -143,9 +143,9 @@ class Player(User):
             game_code: string
                 The game code.
         """
-        if game_code < 0:
-            raise Exception("Game code must be positive.")
-        
+        if game_code is None:
+            raise Exception("Game code not set.")
+                
         self.game_code = game_code
 
     def set_player_id(self, player_id):
@@ -155,8 +155,8 @@ class Player(User):
             player_id: string
                 The player id.
         """
-        if player_id < 0:
-            raise Exception("Player id must be positive.")
+        if player_id is None:
+            raise Exception("Player id not set.")
 
         self.player_id = player_id
 
