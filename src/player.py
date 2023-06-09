@@ -45,6 +45,9 @@ class Player(User):
             bingo_PK: string
                 The name of the sala bingo public key file.
         """
+        if bingo_PK is None:
+            raise Exception("Bingo PK not set.")
+        
         self._bingo_PK = bingo_PK
     
     def __compute_proofs(self, policy):
@@ -93,6 +96,9 @@ class Player(User):
             pairs: dictionary
                 The dictionary of pairs.
         """
+        if policy is None or len(policy) == 0:
+            raise Exception("Policy not set.")
+        
         # compute the merkle proofs for the leaves that are in the policy, and the indices of the leaves 
         proofs, indices = self.__compute_proofs(policy)
         # get the clear values of the leaves that are in the policy
@@ -119,6 +125,17 @@ class Player(User):
         self.IV = int(rand_extract(2*self.security_param, "hex"), 16) # Cast to a 16-bit integer cause it's used as a counter
         self.seed = rand_extract(2*self.security_param, "base64")
 
+    def end_game(self):
+        """ 
+        End a game.
+        """
+        self.game_code = None
+        self.player_id = None
+        self.round = 0
+
+        self.IV = None
+        self.seed = None
+
     def set_game_code(self, game_code):
         """
         Set the game code.
@@ -126,6 +143,9 @@ class Player(User):
             game_code: string
                 The game code.
         """
+        if game_code < 0:
+            raise Exception("Game code must be positive.")
+        
         self.game_code = game_code
 
     def set_player_id(self, player_id):
@@ -135,6 +155,9 @@ class Player(User):
             player_id: string
                 The player id.
         """
+        if player_id < 0:
+            raise Exception("Player id must be positive.")
+
         self.player_id = player_id
 
     def __generate_message(self):
@@ -192,6 +215,9 @@ class Player(User):
             signature: string
                 The signature of the message.
         """
+        if message is None:
+            raise Exception("Message is None. Can't sign a None message.")
+
         # Write the message in a file
         base_filename = self.user_name+'/'+self.user_name
         sign_filename = base_filename + '_comm_sign.pem'
@@ -225,13 +251,10 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
-        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
+        if signature is None:
+            raise Exception("Signature not received.")
 
-        # concat = ""
-        # for param in self.last_message[0]:
-        #     concat += param
-        # concat += self.last_message[1]
-        # concat += self.last_message[2]
+        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
 
         with open(temp_filename, "w") as f: 
             f.write(concatenate(*self.last_message[0], self.last_message[1], self.last_message[2]))
@@ -257,6 +280,9 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
+        if pairs is None or signature is None:
+            raise Exception("Commit pairs or signature are None.")
+
         temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
         
         self._contr_comm = pairs
@@ -319,6 +345,9 @@ class Player(User):
             openings: list
                 The list of openings (message, randomness).
         """
+        if openings is None or signature is None:
+            raise Exception("Openings or signature are None.")
+
         self._contr_open = openings
         
         temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
@@ -331,6 +360,7 @@ class Player(User):
                 concat += concatenate(*contr[0], contr[1], opening[0], opening[1])
             with open(temp_filename, "w") as f:
                 f.write(concat)
+
             # Verify the signature of sala bingo
             res = verify_ECDSA(self._bingo_PK, temp_filename, signature)
             self._final_string = self.__compute_final_string()
