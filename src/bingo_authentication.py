@@ -24,7 +24,8 @@ if __name__ == "__main__":
 
     # TEST CRISTIAN
     alice.start_game("0","0")
-    alice.generate_message()
+    sign = bingo.receive_commitment(*alice.send_commitment())
+    print(sign)
 
 
     

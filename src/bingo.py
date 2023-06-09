@@ -152,9 +152,11 @@ class Bingo:
         # verify the signature of the user on the commitment and the additional parameters
         # using the PK contained in the GP certificate
         extract_public_key(self.GPs[0], "Bingo/GP_PK.pem")
-        if verify_ECDSA("Bingo/GP_PK.pem", concat, signature):
+        with open("Bingo/concat.txt", "w") as f:
+            f.write(concat)
+        if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", signature):
             # compute the signature of the sala bingo on all of them
-            sign_ECDSA(self.SK, concat, "Bingo/signature.pem")
+            sign_ECDSA(self.SK, "Bingo/concat.txt", "Bingo/signature.pem")
             return "Bingo/signature.pem"
         return None
             

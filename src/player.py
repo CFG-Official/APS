@@ -3,9 +3,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from user import User
 from merkle import merkle_proof
-import utils.hash_util as HU
-import utils.bash_util as BU
-import utils.keys_util as KU
+from utils.hash_util import compute_hash_from_data
+from utils.bash_util import execute_command
+from utils.keys_util import concatenate, sign_ECDSA_from_variable, sign_ECDSA
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
 
@@ -78,7 +78,9 @@ class Player(User):
         """
         # return the fields values whose key is in the policy
         proofs, indices = self.__compute_proofs(policy)
-        return {key: self.clear_fields[key] for key in policy}, proofs, indices        
+        return {key: self.clear_fields[key] for key in policy}, proofs, indices    
+    
+    # GAME    
 
     def start_game(self, game_code, player_id):
         """ 
@@ -102,14 +104,14 @@ class Player(User):
     def set_player_id(self, player_id):
         self.player_id = player_id
 
-    def generate_message(self):
+    def __generate_message(self):
         # L'output della funzione deve essere (params, comm, signature)
         if self.game_code is None or self.player_id is None:
             raise Exception("Game code or player id not set. This player isn't in a game.")
         
         params = (self.game_code, self.player_id, str(datetime.datetime.now()))
         comm = self.__compute_commitment()
-        signature = self.__sign_message(KU.concatenate(*list(params), *comm))
+        signature = self.__sign_message(concatenate(*list(params), *comm))
 
         self.last_message = (params, comm, signature)
 
@@ -118,21 +120,21 @@ class Player(User):
     def __compute_commitment(self):
         # compute the commitment
         # Estraggo dall PRF la concatenazione di contributo casuale e randomness
-        prf_output = BU.execute_command(commands["get_prf_value"](self.seed, self.IV)).split('= ')[1].strip()
+        prf_output = execute_command(commands["get_prf_value"](self.seed, self.IV)).split('= ')[1].strip()
 
         # Divide output in two equal parts
         self.last_contribute = prf_output[:len(prf_output)//2]
         self.last_randomess = prf_output[len(prf_output)//2:]
 
-        return HU.compute_hash_from_data(self.last_contribute + self.last_randomess)
+        return compute_hash_from_data(self.last_contribute + self.last_randomess)
     
     def __sign_message(self, message):
+        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+            f.write(message)
         # sign the message
-        return KU.sign_ECDSA_from_variable(self.SK, message).split("= ")[1].strip()
-
-
-
-    # GAME
+        sign_ECDSA(self.SK, self.user_name+'/'+self.user_name+"_temp.txt", self.user_name+'/'+self.user_name+'_comm_sign.pem')
+        return self.user_name+'/'+self.user_name+'_comm_sign.pem'
+        #return sign_ECDSA_from_variable(self.SK, message).split("= ")[1].strip()
     
     def send_commitment(self):
         """
@@ -147,7 +149,7 @@ class Player(User):
             signature: string
                 The signature of the player on the commitment.
         """
-        return self._params, self.__compute_commitment(), self.__sign_message()
+        return self.__generate_message()
     
     def recieve_signature(self, signature):
         """ 
