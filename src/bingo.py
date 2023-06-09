@@ -7,6 +7,7 @@ from utils.pseudorandom_util import hash_concat_data_and_known_rand
 from utils.certificates_util import extract_public_key
 from merkle import merkle_proof, verify_proof
 from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA
+from utils.hash_util import compute_hash_from_data
 
 class Bingo:
     
@@ -14,16 +15,23 @@ class Bingo:
     This class represents the sala bingo.
     """
     
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_contr_comm','_contr_open', '_final_string']
+    
     def __init__(self):
         execute_command(commands["create_directory"]("Bingo"))
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
-        self.known_CAs = ["Bingo/AS.cert"]
-        self.GPs = []
+        self._known_CAs = ["Bingo/AS.cert"]
+        self._GPs = []
+        self._contr_comm = []
+        self._contr_open = []
+        self._final_string = None
         gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
-        self.SK = "Bingo/private_key.pem"
-        self.PK = "Bingo/public_key.pem"
+        self._SK = "Bingo/private_key.pem"
+        self._PK = "Bingo/public_key.pem"
         
     # AUTHENTICATION
+    def get_PK(self):
+        return self._PK
         
     def __check_CA(self, GP_cert, CA_cert):
         """ 
@@ -82,9 +90,9 @@ class Bingo:
             boolean
                 True if the GP is valid, False otherwise.
         """
-        self.GPs.append(GP)
-        if self.__check_CA(GP, self.known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self.known_CAs[0]):
-            self.GPs.append(GP)
+        self._GPs.append(GP)
+        if self.__check_CA(GP, self._known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self._known_CAs[0]):
+            self._GPs.append(GP)
             return True
         return False
     
@@ -105,7 +113,7 @@ class Bingo:
             if item not in clear_fields.keys():
                 return False
             
-        root = self.__extract_root(self.GPs[0])
+        root = self.__extract_root(self._GPs[0])
             
         # value check with merkle proofs
         leaves = {}
@@ -134,7 +142,7 @@ class Bingo:
         If it is valid, it computes its signature on all of them and 
         returns it to the user.
         # Arguments
-            params: list
+            params: tuple
                 The list of additional parameters.
             commitment: string
                 The commitment.
@@ -151,16 +159,19 @@ class Bingo:
         concat += commitment
         # verify the signature of the user on the commitment and the additional parameters
         # using the PK contained in the GP certificate
-        extract_public_key(self.GPs[0], "Bingo/GP_PK.pem")
+        extract_public_key(self._GPs[0], "Bingo/GP_PK.pem")
         with open("Bingo/concat.txt", "w") as f:
             f.write(concat)
         if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", signature):
             # compute the signature of the sala bingo on all of them
-            sign_ECDSA(self.SK, "Bingo/concat.txt", "Bingo/signature.pem")
+            concat += signature
+            self._contr_comm.append((params, commitment))
+            with open("Bingo/concat.txt", "w") as f:
+                f.write(concat)
+            sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
             return "Bingo/signature.pem"
         return None
             
-    
     def publish_commitments_and_signature(self):
         """ 
         Once it has received all the commitments, the sala bingo publishes
@@ -168,25 +179,75 @@ class Bingo:
         
         # Returns
             commitments: list
-                The list of commitments.
+                The list of (params, commitment).
             signature: string
-                The signature of the sala bingo on the commitments.
+                The signature of the sala bingo on the concatenation between the params
+                and the commitment.
         """
-        pass
+        concat = ""
+        for contr in self._contr_comm:
+            for param in contr[0]:
+                concat += param
+            concat += contr[1] # params + commitment
+        with open("Bingo/concat.txt", "w") as f:
+            f.write(concat) 
+        sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+        return self._contr_comm, "Bingo/signature.pem"
     
-    def receive_opening(self, opening):
+    def receive_opening(self, contribution, randomness):
         """ 
         The sala bingo receives the opening from the user.
         """
-        pass
+        self._contr_open.append((contribution, randomness))
+        
+    def __compute_final_string(self):
+        # hash the concatenation of all the openings
+        concat = ""
+        for opening in self._contr_open:
+            concat += opening[0]
+        return compute_hash_from_data(concat)
+
+    def __verify_commitments(self):
+        # verify the commitments
+        for contr, opening in zip(self._contr_comm, self._contr_open):
+            if contr[1] != hash_concat_data_and_known_rand(opening[0], opening[1]):
+                return False
+        return True
 
     def publish_openings(self):
         """ 
         Once received all the openings, the sala bingo computes the
         final string and publishes the openings as (message, randomness) 
         pairs.
+        In addition it computed and returns the signature on the concatenation
+        of all the commitments and the opensings.   
         # Returns
             openings: list
-                The list of openings.
+                The list of (message, randomness) pairs.
+            signature: string
+                The signature of the sala bingo on the concatenation of all the commitments
+                and the openings.
         """
-        pass
+        openings = []
+        for opening in self._contr_open:
+            openings.append((opening[0], opening[1]))
+            
+        if self.__verify_commitments():
+            concat = ""
+            for contr, opening in zip(self._contr_comm, self._contr_open):
+                for param in contr[0]:
+                    concat += param
+                concat += contr[1] + opening[0] + opening[1] # params + commitment + message + randomness
+            with open("Bingo/concat.txt", "w") as f:
+                f.write(concat)
+            sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+            self._final_string = self.__compute_final_string()
+            return openings, "Bingo/signature.pem"
+        else:
+            raise Exception("Commitments not valid.")
+        
+    def get_final_string(self):
+        """ 
+        Returns the final string.
+        """
+        return self._final_string

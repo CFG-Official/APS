@@ -5,9 +5,10 @@ from user import User
 from merkle import merkle_proof
 from utils.hash_util import compute_hash_from_data
 from utils.bash_util import execute_command
-from utils.keys_util import concatenate, sign_ECDSA_from_variable, sign_ECDSA
+from utils.keys_util import concatenate, sign_ECDSA, verify_ECDSA
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
+from utils.hash_util import compute_hash_from_data
 
 class Player(User):
     
@@ -16,17 +17,17 @@ class Player(User):
     """
     
     # AUTHENTICATION
-
     
-    __slots__ = ['game_code', 'player_id', 'security_param']
-
-
+    __slots__ = ['game_code', 'player_id', 'security_param', '_final_string', '_contr_comm', '_contr_open']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
         self.game_code = None
         self.player_id = None
         self.security_param = 16 # (in bytes) -> 128 bits
+        self._contr_comm = []
+        self._contr_open = []
+        self._final_string = None
     
     def send_GP(self):
         """ 
@@ -36,6 +37,18 @@ class Player(User):
                 The name of the GP certificate file.
         """
         return self.GP_certificate
+
+    def set_PK_bingo(self, bingo_PK):
+        """ 
+        Get the PK of the sala bingo.
+        # Arguments
+            bingo_PK: string
+                The name of the sala bingo public key file.
+        """
+        self._bingo_PK = bingo_PK
+        
+    def get_name(self):
+        return self.user_name
     
     def __compute_proofs(self, policy):
         # value check with merkle proofs
@@ -159,25 +172,47 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
-        pass
+        # verify the signature of the sala bingo on the concatenation of the additional 
+        # parameters, the commitment and the signature
+        concat = ""
+        for param in self.last_message[0]:
+            concat += param
+        concat += self.last_message[1]
+        concat += self.last_message[2]
+        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f: 
+            f.write(concat)
+        if verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature):
+            self._bingo_sign_on_comm = signature
+            return True
+        return False
     
-    def recieve_commitments_and_signature(self, values, signature):
+    def recieve_commitments_and_signature(self, pairs, signature):
         """
         The player receives the commitments, the parameters and the 
         signature of the sala bingo on them. Then it verifies the 
         signature.
         
         # Arguments
-            values: list
-                The list of values.
+            pairs: list
+                The list of pairs.
             signature: string
-                The signature of the sala bingo on the commitments.
+                The signature of the sala bingo on the list of pairs concatenated.
                 
         # Returns
             true if the signature is valid, false otherwise.
-            
         """
-        pass
+        self._contr_comm = pairs
+        concat = ""
+        for pair in pairs:
+            for param in pair[0]:
+                concat += param
+            concat += pair[1]
+        with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+            f.write(concat)
+        if verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature):
+            self._bingo_sign_on_comm = signature
+            return True
+        return False
     
     def send_opening(self):
         """ 
@@ -186,14 +221,45 @@ class Player(User):
             opening: string
                 The opening as (message, randomness) pair.
         """
-        pass
+        return self.last_contribute, self.last_randomess
+
+    def __compute_final_string(self):
+        # hash the concatenation of all the openings
+        concat = ""
+        for opening in self._contr_open:
+            concat += opening[0]
+        return compute_hash_from_data(concat)
     
-    def recieve_openings(self, openings):
+    def __verify_commitments(self):
+        for contr, opening in zip(self._contr_comm, self._contr_open):
+            if contr[1] != hash_concat_data_and_known_rand(opening[0], opening[1]):
+                return False
+        return True
+    
+    def recieve_openings(self, openings, signature):
         """ 
         The player receives the openings from the sala bingo and computes
         the final string.
         # Arguments
             openings: list
-                The list of openings.
+                The list of openings (message, randomness).
         """
-        pass
+        self._contr_open = openings
+        
+        if self.__verify_commitments():
+            concat = ""
+            for contr, opening in zip(self._contr_comm, self._contr_open):
+                for param in contr[0]:
+                    concat += param
+                concat += contr[1] + opening[0] + opening[1]
+            with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+                f.write(concat)
+            res = verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature)
+            self._final_string = self.__compute_final_string()
+            return res
+        else:
+            raise Exception("Commitments not valid.")
+        
+    def get_final_string(self):
+        return self._final_string
+        
