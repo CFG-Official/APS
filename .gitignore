@@ -169,3 +169,17 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+
+# CA files
+*.txt
+*.csr
+*.pem
+*.cert
+*.cnf
+
+# Simulation
+Alice/*
+AS/*
+MdI/*
+Bingo/*
+
