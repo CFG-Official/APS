@@ -15,9 +15,7 @@ class Player(User):
     """ 
     This class represents a player of the bingo game, it inherits from the User class.
     """
-    
-    # AUTHENTICATION
-    
+        
     __slots__ = ['game_code', 'player_id', 'security_param', '_final_string', '_contr_comm', '_contr_open']
 
     def __init__(self, CIE_fields):
@@ -29,6 +27,8 @@ class Player(User):
         self._contr_open = []
         self._final_string = None
     
+    # AUTHENTICATION
+
     def send_GP(self):
         """ 
         Send the GP certificate to the sala bingo.
@@ -40,22 +40,31 @@ class Player(User):
 
     def set_PK_bingo(self, bingo_PK):
         """ 
-        Get the PK of the sala bingo.
+        Set the PK of the sala bingo.
         # Arguments
             bingo_PK: string
                 The name of the sala bingo public key file.
         """
         self._bingo_PK = bingo_PK
-        
-    def get_name(self):
-        return self.user_name
     
     def __compute_proofs(self, policy):
-        # value check with merkle proofs
+        """
+        Given a policy, compute the merkle proofs for the leaves that are in the policy
+        # Arguments
+            policy: string
+                The policy to access bingo
+
+        # Returns
+            proofs: dictionary
+                A dictionary containing the merkle proofs for the leaves that are in the policy.
+                Key are the name of the field (opening of leaf) and values are the merkle proofs.
+        """
         
         leaves = []
-        indices = {}
-        index = 0
+        indices = {} # map the properties (key) to the index of leaves list (value)
+        index = 0 
+
+        # Compute the commitment (aka the leaves of the merkle tree) for each field in the policy
         for key, value in self.clear_fields.items():
             # append the hashed value of the concatenation between the value and the randomness
             leaves.append(hash_concat_data_and_known_rand(value[0],value[1]))
@@ -104,8 +113,8 @@ class Player(User):
             player_id: string
                 The player id.
         """
-        self.game_code = game_code
-        self.player_id = player_id
+        self.set_game_code(game_code)
+        self.set_player_id(player_id)
 
         # Inizializzo la PRF per il calcolo dei contributi casuali
         self.IV = rand_extract(2*self.security_param, "base64")
@@ -149,7 +158,7 @@ class Player(User):
         return self.user_name+'/'+self.user_name+'_comm_sign.pem'
         #return sign_ECDSA_from_variable(self.SK, message).split("= ")[1].strip()
     
-    def send_commitment(self):
+    def send_commitment(self): # Nome da cambiare, non è solo il commitment
         """
         The player computes its own commitment, and computes the signature
         on the committment. Then he sends them and the game parameters
@@ -164,7 +173,7 @@ class Player(User):
         """
         return self.__generate_message()
     
-    def recieve_signature(self, signature):
+    def receive_signature(self, signature):
         """ 
         The player receives the signature of the sala bingo on the commitment,
         the signature and the additional parameters. Then it verifies the 
@@ -186,7 +195,7 @@ class Player(User):
             return True
         return False
     
-    def recieve_commitments_and_signature(self, pairs, signature):
+    def receive_commitments_and_signature(self, pairs, signature):
         """
         The player receives the commitments, the parameters and the 
         signature of the sala bingo on them. Then it verifies the 
@@ -236,7 +245,7 @@ class Player(User):
                 return False
         return True
     
-    def recieve_openings(self, openings, signature):
+    def receive_openings(self, openings, signature):
         """ 
         The player receives the openings from the sala bingo and computes
         the final string.

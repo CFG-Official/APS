@@ -41,7 +41,7 @@ if __name__ == "__main__":
     if sign:
         # player verifies the signature of the sala bingo on the commitment and the additional parameters
         # if it is not valid, it aborts the game, otherwise it continues
-        if not alice.recieve_signature(sign):
+        if not alice.receive_signature(sign):
             print("Not valid signature! Terminating...")
             sys.exit()
     else:
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         sys.exit()
     print("- Valid server signature, waiting for the other players...")
     
-    if alice.recieve_commitments_and_signature(*bingo.publish_commitments_and_signature()):
+    if alice.receive_commitments_and_signature(*bingo.publish_commitments_and_signature()):
         # player verifies the signature of the sala bingo on the commitments
         print("- Valid server signature, opening the contribution...")
     else:
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # bingo verifies the opening and, if the commitments are valid, it computes its signature
     # on the concatenation of all the contributions and returns it to the user along
     # with the openings
-    print(alice.recieve_openings(*bingo.publish_openings()))
+    print(alice.receive_openings(*bingo.publish_openings()))
     print("Sono la Sala Bingo e ho ottenuto:", bingo.get_final_string())
     print("Sono il player e ho ottenuto:", alice.get_final_string())
 
