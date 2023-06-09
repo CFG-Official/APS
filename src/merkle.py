@@ -117,4 +117,5 @@ proof = merkle_proof(leaves, 2)
 print("PROVA DI MERKLE")
 print(proof)
 
+print("ESITO VERIFICA PROOF")
 print(verify_proof(root, proof, leaves[2], 2))
