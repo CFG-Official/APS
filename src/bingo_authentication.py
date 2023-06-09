@@ -21,6 +21,12 @@ if __name__ == "__main__":
     # validate GP fields according to the daily policy
     clear_fields, merkle_proofs, indices = alice.send_clear_fields(policy)
     print(bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices))
+
+    # TEST CRISTIAN
+    alice.start_game("0","0")
+    alice.generate_message()
+
+
     
     
     

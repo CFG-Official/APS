@@ -19,7 +19,7 @@ def rand_extract(bytes:int, encode:str):
 
     if encode== "hex" or encode == "base64":
         enc = "-"+encode
-        return (BU.execute_command(commands["rand_extract"](enc,bytes)))
+        return (BU.execute_command(commands["rand_extract"](enc,bytes))).removesuffix("\n")
     else:
         raise ValueError("Invalid encoding")
     
