@@ -3,6 +3,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from utils.bash_util import execute_command
 from utils.commands_util import commands
+from utils.pseudorandom_util import hash_concat_data_and_known_rand
+from merkle import merkle_proof, verify_proof
 
 class Bingo:
     
@@ -78,9 +80,14 @@ class Bingo:
             self.GPs.append(GP)
             return True
         return False
+    
+    def __extract_root(self, GP_cert):
+        # extract the root from the GP certificate
+        text = execute_command(commands["cert_extract_merkle_root"](GP_cert))
+        # find the 'X509v3 Subject Alternative Name:' string and extract the root
+        return text.split("X509v3 Subject Alternative Name:")[1].split("DNS:")[1].split("\n")[0].encode('utf-8').decode('unicode_escape')
 
     def __validate_clear_fields(self, policy, clear_fields):
-        # verify if the keys of clear fields and the policy are the same
         
         # length check
         if len(policy) != len(clear_fields):
@@ -92,11 +99,24 @@ class Bingo:
                 return False
             
         # value check with merkle proofs
-        
+        leaves = []
+        for value in clear_fields.values():
+            # append the hashed value of the concatenation between the value and the randomness
+            leaves.append(hash_concat_data_and_known_rand(value[0],value[1]))
+            
+        # verify the merkle proofs for each leaf
+        for index in range(len(leaves)):
+            proof = merkle_proof(leaves, index)
+            print("PROOF:",proof)
+            res = verify_proof(self.__extract_root(self.GPs[0]), proof, leaves[index], index)
+            if not res:
+                return False
             
         return True
 
     def receive_clear_fields(self,policy,clear_fields):
-        
+        # verify if the keys of clear fields and the policy are the same
         return self.__validate_clear_fields(policy,clear_fields)
         
+
+    

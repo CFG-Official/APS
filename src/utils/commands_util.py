@@ -61,6 +61,7 @@ commands = {
     "cert_extract_issuer": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -issuer | cut -d "=" -f 2',
     "cert_extract_signature": lambda cert_file, signature: f'{openssl} x509 -in {cert_file} -noout -text > {signature}',
     "cert_extract_expiration_date": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -enddate',
+    "cert_extract_merkle_root": lambda cert_file: f'openssl x509 -in {cert_file} -text',
     "copy_cert": lambda in_file, out_file: f'cp {in_file} {out_file}',
     "validate_certificate":lambda CA_cert, cert_user:f'openssl verify -CAfile {CA_cert} {cert_user} '
 }

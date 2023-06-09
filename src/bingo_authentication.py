@@ -18,9 +18,8 @@ if __name__ == "__main__":
     # DPA chooses the daily policy
     dpa = DPA()
     policy = dpa.choose_policy()
-    print(policy)
     # validate GP fields according to the daily policy
-    bingo.receive_clear_fields(alice.send_clear_fields(policy))
+    print(bingo.receive_clear_fields(policy,alice.send_clear_fields(policy)))
     
     
     

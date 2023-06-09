@@ -121,3 +121,13 @@ def hash_concat_data_and_rand(bytes, data):
     """
     rand = rand_extract(bytes, "hex")
     return data, rand, HU.compute_hash_from_data((data+rand).removesuffix("\n"))
+
+def hash_concat_data_and_known_rand(data,rand):
+    """
+        Concatenates the data with a pseudo random number.
+        # Arguments
+            data: The data to concatenate.
+        # Returns
+            The concatenated data.
+    """
+    return HU.compute_hash_from_data((data+rand).removesuffix("\n"))
