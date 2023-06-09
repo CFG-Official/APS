@@ -18,6 +18,7 @@ commands = {
     "rand_view_bin": lambda in_file: f'cat {in_file} | xxd -b',
     "rand_view_hex": lambda in_file: f'cat {in_file} | xxd -p',
     "rand_view_base64": lambda in_file: f'cat {in_file} | xxd -p | base64',
+    "get_prf_value": lambda k, iv:f'echo -n {iv} | {openssl} dgst -sha256 -hmac {k}',
     # Hash
     "compute_hash_from_data": lambda data: f'printf {data} | openssl dgst -sha3-256',
     "compute_hash_from_file": lambda in_file, out_file, hash_alg: f'{openssl} dgst -{hash_alg} {in_file} >> {out_file}',
@@ -35,7 +36,8 @@ commands = {
     "ECDSA_priv_key_view": lambda in_file: f'{openssl} pkey -in {in_file} -text',
     "ECDSA_pub_key_gen": lambda priv_key_file, out_file: f'{openssl} pkey -in {priv_key_file} -pubout -out {out_file}',
     "ECDSA_pub_key_view": lambda in_file: f'{openssl} pkey -pubin -in {in_file} -text',
-    "ECDSA_sign": lambda out_file, priv_key_file, signature: f'{openssl} dgst -sign {priv_key_file} -out {signature} {out_file}',
+    "ECDSA_sign": lambda in_file, priv_key_file, signature: f'{openssl} dgst -sign {priv_key_file} -out {signature} {in_file}',
+    "ECDSA_sign_variable": lambda in_data, priv_key_file: f'echo -n {in_data} | {openssl} dgst -sign {priv_key_file} -hex',
     "ECDSA_verify": lambda in_file, signature, pub_key_file: f'{openssl} dgst -verify {pub_key_file} -signature {signature} {in_file}',
     # Certificate Signing Requests
     "CSR_gen": lambda priv_key_file, out_file, config_file: f'{openssl} req -new -key {priv_key_file} -out {out_file} -config {config_file}',
