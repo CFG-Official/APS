@@ -300,6 +300,12 @@ class Player(User):
         return compute_hash_from_data(concat)
     
     def __verify_commitments(self):
+        """
+        Verify that the commitments received really contains openings receivede.
+        # Returns
+            true if the commitments are valid, false otherwise.
+        """
+
         for contr, opening in zip(self._contr_comm, self._contr_open):
             if contr[1] != hash_concat_data_and_known_rand(opening[0], opening[1]):
                 return False
@@ -315,20 +321,29 @@ class Player(User):
         """
         self._contr_open = openings
         
+        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
+
         if self.__verify_commitments():
+            # Compute the concatenation of commit messages and openings messages in order
+            # to verify the signature of sala bingo
             concat = ""
             for contr, opening in zip(self._contr_comm, self._contr_open):
-                for param in contr[0]:
-                    concat += param
-                concat += contr[1] + opening[0] + opening[1]
-            with open(self.user_name+'/'+self.user_name+"_temp.txt", "w") as f:
+                concat += concatenate(*contr[0], contr[1], opening[0], opening[1])
+            with open(temp_filename, "w") as f:
                 f.write(concat)
-            res = verify_ECDSA(self._bingo_PK, self.user_name+'/'+self.user_name+"_temp.txt", signature)
+            # Verify the signature of sala bingo
+            res = verify_ECDSA(self._bingo_PK, temp_filename, signature)
             self._final_string = self.__compute_final_string()
             return res
         else:
             raise Exception("Commitments not valid.")
         
     def get_final_string(self):
+        """
+        Return the final string.
+        # Returns
+            final_string: string
+                The final string computed for the last ended roung.
+        """
         return self._final_string
         
