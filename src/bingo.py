@@ -17,20 +17,21 @@ class Bingo:
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code', '_last_auth_id']
     
     def __init__(self):
         self._blockchain = None
         execute_command(commands["create_directory"]("Bingo"))
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
         self._known_CAs = ["Bingo/AS.cert"]
-        self._GPs = []
+        self._GPs = {}
         self._players_info = {}
         self._final_string = None
         gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
         self._SK = "Bingo/private_key.pem"
         self._PK = "Bingo/public_key.pem"
         self._last_id = 0
+        self._last_auth_id = 0
         self._game_code = random.randint(0,1000000)
         
     # BLOCKCHAIN VERSION
@@ -78,8 +79,10 @@ class Bingo:
         Initialize the player.
         """
         self._last_id += 1
-        blocks = True if self._blockchain is not None else False
+        print("BLOCK FLAG ", self._blockchain)
+        blocks = True if self._blockchain is not None else False 
         return str(self._game_code), str(self._last_id-1), blocks
+
     
     def get_PK(self):
         """
@@ -158,9 +161,11 @@ class Bingo:
             raise Exception("GP is None")
 
         if self.__check_CA(GP, self._known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self._known_CAs[0]):
-            self._GPs.append(GP)
-            return True
-        return False
+            self._last_auth_id += 1
+            # self._GPs.append(GP
+            self._GPs[self._last_auth_id] = GP
+            return self._last_auth_id
+        return None
     
     def __extract_root(self, GP_cert):
         """
@@ -178,7 +183,7 @@ class Bingo:
         # find the 'X509v3 Subject Alternative Name:' string and extract the root
         return text.split("X509v3 Subject Alternative Name:")[1].split("DNS:")[1].split("\n")[0].encode('utf-8').decode('unicode_escape')
 
-    def __validate_clear_fields(self, policy, clear_fields, proofs, indices):
+    def __validate_clear_fields(self, policy, clear_fields, proofs, indices, auth_id):
         """
         Perform a validation of the clear fields sent by the user.
 
@@ -205,8 +210,9 @@ class Bingo:
             if item not in clear_fields.keys():
                 raise Exception("Policy and clear fields have different keys")
             
-        root = self.__extract_root(self._GPs[0])
-            
+        # root = self.__extract_root(self._GPs[0]) # vedi se va bene cosi
+        root = self.__extract_root(self._GPs[auth_id])
+
         # value check with merkle proofs
         leaves = {}
         for key, value in clear_fields.items():
@@ -217,13 +223,15 @@ class Bingo:
         for key, value in proofs.items():
             res = verify_proof(root, value, leaves[key], indices[key])
             if not res:
+                print("Proofs are not valid")
                 raise Exception("Invalid proof")
             
         self._players_info[str(self._last_id)] = {}
+        self._players_info[str(self._last_id)]['auth_id'] = auth_id
         
         return self.__init_player()
 
-    def receive_clear_fields(self,policy,clear_fields, proofs, indices):
+    def receive_clear_fields(self,policy,clear_fields, proofs, indices, auth_id):
         """
         Receive the clear fields from the user.
         # Arguments
@@ -240,7 +248,7 @@ class Bingo:
                 True if the clear fields are valid, False otherwise.
         """
         # verify if the keys of clear fields and the policy are the same
-        return self.__validate_clear_fields(policy,clear_fields, proofs, indices)
+        return self.__validate_clear_fields(policy,clear_fields, proofs, indices, auth_id)
         
     # GAME
         
@@ -272,7 +280,7 @@ class Bingo:
 
         # verify the signature of the user on the commitment and the additional parameters
         # using the PK contained in the GP certificate
-        extract_public_key(self._GPs[0], "Bingo/GP_PK.pem")
+        extract_public_key(self._GPs[self._players_info[id]['auth_id']], "Bingo/GP_PK.pem")
         with open("Bingo/concat.txt", "w") as f:
             f.write(concat)
         if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", signature):
@@ -420,7 +428,7 @@ class Bingo:
     
     def receive_mapping(self, player_id, mapping):
         # Verify signature with the original PK of the player
-        extract_public_key(self._GPs[0], "Bingo/GP_PK.pem")
+        extract_public_key(self._GPs[self._players_info[player_id]['auth_id']], "Bingo/GP_PK.pem")
         with open("Bingo/concat.txt", "w") as f:
             f.write(concatenate(*mapping[0]))
         
