@@ -4,6 +4,7 @@ from utils.CA_util import create_CA, sign_cert
 from utils.commands_util import commands
 from utils.certificates_util import require_certificate_with_given_fields, concat_cert_and_rand
 from utils.hash_util import compute_hash_from_file
+import os
 
 class User:
     """
@@ -63,7 +64,8 @@ class User:
         """
         Obtain the CIE certificate from the CIE card.
         """
-        create_CA("MdI", "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/MdI.cnf")
+        if not os.path.exists("MdI"):
+            create_CA("MdI", "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/MdI.cnf")
         require_certificate_with_given_fields(self._CIE_fields, self._SK, self._user_name+'/'+self._user_name+"_CIE_request.cert", "src/configuration_files/user.cnf")
         sign_cert(self._user_name+'/'+self._user_name+"_CIE_request.cert", self._user_name+'/'+self._user_name+"_CIE_certificate.cert", "src/configuration_files/MdI.cnf")
         self._CIE_certificate =self._user_name+'/'+self._user_name+"_CIE_certificate.cert"
@@ -93,7 +95,7 @@ class User:
             GP_csr: string
                 The name of the GP csr file.
         """
-        GP_fields = ["--"]*6
+        GP_fields = [""]*6
         gen_ECDSA_keys("prime256v1", self._user_name+'/'+self._user_name+"_params.pem", self._user_name+'/'+self._user_name+"_GP_private_key.pem", self._user_name+'/'+self._user_name+"_GP_public_key.pem")
         self._SK_GP = self._user_name+'/'+self._user_name+"_GP_private_key.pem"
         self._PK_GP = self._user_name+'/'+self._user_name+"_GP_public_key.pem"
