@@ -154,7 +154,7 @@ class CommitBlock(AbstractBlock):
     def _data_string(self):
         output = self._internal_block_data_header
         for user_id, user_commit in self._data.items():
-            output += f'(User: {user_id} - [Commitment: {user_commit[0]} - Parameter: {user_commit[1]} - Player Signature: {user_commit[2]}])\n'
+            output += f'(User: {user_id} - [Parameter: {user_commit[0]} - Commitment: {user_commit[1]} - Player Signature: {user_commit[2]}])\n'
         output += self._internal_block_data_footer
         return output
     
