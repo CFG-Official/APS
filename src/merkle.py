@@ -100,20 +100,21 @@ def __preprocess(leaves):
 def __is_power_of_two(n):
     return n > 0 and (n & (n - 1)) == 0
 
-# Uso dell'algoritmo
-# Leaves sono le foglie dell'albero, ovvero i dati da autenticare.
-leaves = ['a', 'b', 'c','d']
-leaves = __preprocess(leaves)
-root = merkle_tree(leaves)
-print(root)
+if __name__ == "__main__":
+    # Uso dell'algoritmo
+    # Leaves sono le foglie dell'albero, ovvero i dati da autenticare.
+    leaves = ['a', 'b', 'c','d']
+    leaves = __preprocess(leaves)
+    root = merkle_tree(leaves)
+    print(root)
 
-print("PRIMO LIVELLO DELL'ALBERO")
-print(leaves)
+    print("PRIMO LIVELLO DELL'ALBERO")
+    print(leaves)
 
-# Calcolo la prova di Merkle per la foglia con indice 2.
-proof = merkle_proof(leaves, 0)
-print("PROVA DI MERKLE")
-print(proof)
+    # Calcolo la prova di Merkle per la foglia con indice 2.
+    proof = merkle_proof(leaves, 0)
+    print("PROVA DI MERKLE")
+    print(proof)
 
-print("ESITO VERIFICA PROOF")
-print(verify_proof(root, proof, leaves[0], 0))
+    print("ESITO VERIFICA PROOF")
+    print(verify_proof(root, proof, leaves[0], 0))
