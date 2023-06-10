@@ -17,10 +17,10 @@ def play(user, bingo):
         # if it is not valid, it aborts the game, otherwise it continues
         if not user.receive_signature(sign):
             print("Not valid signature! Terminating...")
-            sys.exit()
+            return
     else:
         print("Not valid signature! Terminating...")
-        sys.exit()
+        return
     print("- Valid server signature, waiting for the other players...")
     
     if user.receive_commitments_and_signature(*bingo.publish_commitments_and_signature()):
@@ -28,7 +28,7 @@ def play(user, bingo):
         print("- Valid server signature, opening the contribution...")
     else:
         print("Not valid signature! Terminating...")
-        sys.exit()
+        return
         
     # player sends the opening to the slaa bingo
     bingo.receive_opening(*user.send_opening())

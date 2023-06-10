@@ -1,9 +1,7 @@
 import sys
 from player import Player
 from bingo import Bingo
-from DPA import DPA
 from AS import AS
-from blockchain import Blockchain
 
 import AS_authentication as AS_util
 import bingo_authentication as bingo_util
@@ -24,11 +22,11 @@ def main():
     bingo_util.authentication(alice,bingo)
 
     print("---------- Bingo VALIDATION ----------")
-    game_code, player_id = bingo_util.validation(alice,bingo)
+    game_code, player_id, blocks = bingo_util.validation(alice,bingo)
 
     # The user is now authenticated and can play
     print("---------- GAME STARTING ----------")
-    alice.start_game(game_code,player_id)
+    alice.start_game(game_code,player_id, blocks)
     bingo.receive_mapping(player_id, alice.generate_mapping()) # Receive the mapping from the player
     
     # bingo.add_pre_game_block()

@@ -15,7 +15,7 @@ def authentication(user, bingo):
         print("- Valid GP! Starting authentication...")
     else:
         print("- Invalid GP! Terminating...")
-        sys.exit()
+        return
     
 def validation(user, bingo):
     # DPA chooses the daily policy
@@ -24,8 +24,8 @@ def validation(user, bingo):
     # validate GP fields according to the daily policy
     clear_fields, merkle_proofs, indices = user.send_clear_fields(policy)
     try:
-        game_code, last_id = bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices)
+        game_code, last_id, blocks = bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices)
     except:
         print("- Invalid GP! Terminating...")
         return
-    return game_code, last_id
+    return game_code, last_id, blocks
