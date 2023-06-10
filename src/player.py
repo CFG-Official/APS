@@ -231,7 +231,7 @@ class Player(User):
             f.write(message)
 
         # sign the message
-        sign_ECDSA(self._SK, temp_filename, sign_filename)
+        sign_ECDSA(self._SK_GP, temp_filename, sign_filename)
         return sign_filename
     
     def send_commitment(self): # Nome da cambiare, non è solo il commitment

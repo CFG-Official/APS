@@ -1,5 +1,5 @@
 from utils.bash_util import execute_command
-from utils.keys_util import gen_RSA_keys, export_RSA_pub_key, sign_RSA
+from utils.keys_util import gen_RSA_keys, export_RSA_pub_key, sign_RSA, gen_ECDSA_keys
 from utils.CA_util import create_CA, sign_cert
 from utils.commands_util import commands
 from utils.certificates_util import require_certificate_with_given_fields, concat_cert_and_rand
@@ -94,7 +94,10 @@ class User:
                 The name of the GP csr file.
         """
         GP_fields = ["--"]*6
-        require_certificate_with_given_fields(GP_fields,self._SK, self._user_name+'/'+self._user_name+"_GP_request.csr", "src/configuration_files/user.cnf")
+        gen_ECDSA_keys("prime256v1", self._user_name+'/'+self._user_name+"_params.pem", self._user_name+'/'+self._user_name+"_GP_private_key.pem", self._user_name+'/'+self._user_name+"_GP_public_key.pem")
+        self._SK_GP = self._user_name+'/'+self._user_name+"_GP_private_key.pem"
+        self._PK_GP = self._user_name+'/'+self._user_name+"_GP_public_key.pem"
+        require_certificate_with_given_fields(GP_fields,self._SK_GP, self._user_name+'/'+self._user_name+"_GP_request.csr", "src/configuration_files/user.cnf")
         print("-> "+self._user_name,": CSR request for GP created")
         return self._user_name+'/'+self._user_name+"_GP_request.csr"
 
