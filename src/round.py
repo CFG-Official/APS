@@ -8,8 +8,6 @@ import AS_authentication as AS_util
 import bingo_authentication as bingo_util
 
 def play(user, bingo):
-    print("Game starting...")
-    user.start_game("0","0")
     # player sends the parameters, commitment and signature to the bingo and 
     # it verifies the signature and, if it is valid, it computes its signature
     # on all of them and returns it to the user

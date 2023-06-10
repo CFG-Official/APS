@@ -21,11 +21,13 @@ def authentication(user, bingo):
     policy = dpa.choose_policy()
     # validate GP fields according to the daily policy
     clear_fields, merkle_proofs, indices = user.send_clear_fields(policy)
-    if bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices):
-        print("- Valid GP fields!", user.get_name(), "can play!")
-    else:
-        print("- Invalid GP fields! Terminating...")
-        sys.exit()
+    try:
+        game_code, last_id = bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices)
+    except:
+        print("- Invalid GP! Terminating...")
+        return
+    return game_code, last_id
+        
 
 if __name__ == "__main__":
     # authentication with the AS to get the GP
