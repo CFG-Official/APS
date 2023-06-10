@@ -369,7 +369,7 @@ class Player(User):
                 The opening as (message, randomness) pair.
         """
         self._last_opening = (self._last_contribute, self._last_randomess)
-        return sefl._last_opening
+        return self._player_id, *self._last_opening
 
     def __compute_final_string(self):
         """
@@ -506,11 +506,15 @@ class Player(User):
         if self._blockchain is None:
             raise Exception("There is no blockchain to contestate.")
         
+        self._blockchain.set_credentials(self._PK_BC, self._SK_BC)
         self._blockchain.add_block("dispute", {self._player_id: self._last_opening})
+        self._blockchain.reset_server_credentials()
 
     def contestate_commit(self):
 
         if self._blockchain is None:
             raise Exception("There is no blockchain to contestate.")
         
+        self._blockchain.set_credentials(self._PK_BC, self._SK_BC)
         self._blockchain.add_block("dispute", {self._player_id: self._last_contribute})
+        self._blockchain.reset_server_credentials()

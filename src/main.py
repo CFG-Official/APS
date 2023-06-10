@@ -3,6 +3,7 @@ from player import Player
 from bingo import Bingo
 from AS import AS
 from DPA import DPA
+from evilbingo import EvilBingo
 
 import AS_authentication as AS_util
 import bingo_authentication as bingo_util
@@ -23,6 +24,7 @@ def main():
 
     # The user now owns a GP and wants to authenticate to the sala bingo
     print("---------- Bingo AUTHENTICATION ----------")
+    #bingo = EvilBingo()
     bingo = Bingo()
     bingo.set_blockchain()
     alice.set_auth_id(bingo_util.authentication(alice,bingo))

@@ -20,9 +20,11 @@ def multi_play(players, bingo):
         # player sends the opening to the sala bingo
         bingo.receive_opening(*player.send_opening())
 
-    for player in players:
+    for player in players: 
         # Send opening and receive signature ack
-        if player.receive_openings(*bingo.publish_openings()) is not None:
+        res = bingo.publish_openings()
+        if res is not None:
+            player.receive_openings(*res)
             print("Sono il player " + player.get_name() + " e ho ottenuto:", player.get_final_string())
         else:
             player.contestate_opening()
