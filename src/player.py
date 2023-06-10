@@ -9,6 +9,7 @@ from utils.keys_util import concatenate, sign_ECDSA, verify_ECDSA
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
 from utils.hash_util import compute_hash_from_data
+from src.utils.keys_util import *
 
 class Player(User):
     
@@ -381,3 +382,14 @@ class Player(User):
         """
         return self._final_string
         
+    def generate_mapping(self):
+        """
+        Generate a message containg a new public key with a signature using
+        the new private key (Fiat Shamir 86).
+        """
+
+        # Generate a new key pair using ECDSA
+        base_filename = self._user_name+'/'+ 'mapping_file'
+        gen_ECDSA_keys('prime256v1', base_filename + 'param.pem', base_filename + 'private_key.pem', base_filename + 'public_key.pem')
+        
+        self._fiat_shamir_86()
