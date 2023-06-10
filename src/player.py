@@ -17,7 +17,7 @@ class Player(User):
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness']
+    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
@@ -29,7 +29,7 @@ class Player(User):
         self._IV = None
         self._last_contribute = None
         self._last_randomess = None
-        self._security_param = 16 # (in bytes) -> 128 bits
+        self._security_param = 32 # (in bytes) -> 256 bits
         self._contr_comm = []
         self._contr_open = []
         self._final_string = None
@@ -129,8 +129,8 @@ class Player(User):
         self._round = 0
 
         # Inizializzo la PRF per il calcolo dei contributi casuali
-        self._IV = int(rand_extract(2*self._security_param, "hex"), 16) # Cast to a 16-bit integer cause it's used as a counter
-        self._seed = rand_extract(2*self._security_param, "base64")
+        self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
+        self._seed = rand_extract(self._security_param, "base64")
 
     def end_game(self):
         """ 
@@ -204,7 +204,7 @@ class Player(User):
         # Compute the PRF output
         prf_output = execute_command(commands["get_prf_value"](self._seed, self._IV)).split('= ')[1].strip()
         # Update the IV
-        self._IV = (self._IV + 1) % (2*self._security_param)
+        self._IV = (self._IV + 1) % (self._security_param)
 
         # Divide output in two equal parts: the first is the contribution, the second is the randomness used to commit
         self._last_contribute = prf_output[:len(prf_output)//2]
@@ -389,7 +389,20 @@ class Player(User):
         """
 
         # Generate a new key pair using ECDSA
-        base_filename = self._user_name+'/'+ 'mapping_file'
-        gen_ECDSA_keys('prime256v1', base_filename + 'param.pem', base_filename + 'private_key.pem', base_filename + 'public_key.pem')
+        base_filename = self._user_name+'/'+ 'BC_mapping_'
+        self._SK_BC = base_filename + 'private_key.pem'
+        self._PK_BC = base_filename + 'public_key.pem'
+        gen_ECDSA_keys('prime256v1', base_filename + 'param.pem', self._SK_BC, self._PK_BC)
         
-        self._fiat_shamir_86()
+        # Fiat-Shamir 86 protocol with mapping key
+        signature_bc = self._user_name+'/'+self._user_name+'_BC_mapping_sign.pem'
+        sign_ECDSA(self._SK_BC, '', signature_bc)
+        temp = (self._PK_BC, signature_bc)
+
+        # Shnorr signature with GP key
+        signature_gp = self._user_name+'/'+self._user_name+'_GP_mapping_sign.pem'
+        sign_ECDSA(self._SK_GP, concatenate(*temp), signature_gp)
+
+        return temp, signature_gp
+
+
