@@ -223,10 +223,10 @@ class DisputeBlock(AbstractBlock):
         def _data_string(self):
             output = self._internal_block_data_header
             
-            if len(self._data.values()[0]) == 2:    
+            if len(list(self._data.values())[0]) == 2:    
                 for user_id, user_dispute in self._data.items():
                     output += f'(User: {user_id} - [Reveal: {user_dispute[0]} - Randomness: {user_dispute[1]}])\n'
-            elif len(self._data.values()[0]) == 3:
+            elif len(list(self._data.values())[0]) == 3:
                 for user_id, user_dispute in self._data.items():
                     output += f'(User: {user_id} - [Parameter: {user_dispute[0]} - Commitment: {user_dispute[1]} - Player Signature: {AbstractBlock.binary_to_hex(user_dispute[2])}])\n'
             else:

@@ -3,6 +3,7 @@ from player import Player
 from bingo import Bingo
 from AS import AS
 from DPA import DPA
+from evilbingo import EvilBingo
 
 import AS_authentication as AS_util
 import bingo_authentication as bingo_util
@@ -12,15 +13,18 @@ def main():
     # A user requires a GP to play
     alice = Player(["Alice", "IT", "F", "Rome", "1990-01-01", "CF1"])
     bob = Player(["Bob", "IT", "F", "Rome", "1999-01-01", "CF2"])
+
     print("---------- GP REQUEST ----------")
     print("-> ", alice.get_name(), "Requires the GP to the AS...")
     print("-> ", bob.get_name(), "Requires the GP to the AS...")
+
     authority = AS()
     AS_util.authentication(alice, authority)    
     AS_util.authentication(bob, authority)
 
     # The user now owns a GP and wants to authenticate to the sala bingo
     print("---------- Bingo AUTHENTICATION ----------")
+    #bingo = EvilBingo()
     bingo = Bingo()
     bingo.set_blockchain()
     alice.set_auth_id(bingo_util.authentication(alice,bingo))
@@ -50,7 +54,8 @@ def main():
     bingo.receive_mapping(bob_id, bob.generate_mapping()) # Receive the mapping from the player
     
     bingo.add_pre_game_block()
-    round.multi_play([alice, bob], bingo)
+
+    round.multi_play([alice,bob],bingo)
 
     bob.end_game()
     alice.end_game()

@@ -81,8 +81,8 @@ class Bingo:
         Initialize the player.
         """
         self._last_id += 1
-        blocks = True if self._blockchain is not None else False 
-        return str(self._game_code), str(self._last_id-1), blocks
+        # blocks = True if self._blockchain is not None else False 
+        return str(self._game_code), str(self._last_id-1), self._blockchain
 
     
     def get_PK(self):
