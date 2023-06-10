@@ -78,7 +78,8 @@ class Bingo:
         Initialize the player.
         """
         self._last_id += 1
-        return str(self._game_code), str(self._last_id-1)
+        blocks = True if self._blockchain is not None else False
+        return str(self._game_code), str(self._last_id-1), blocks
     
     def get_PK(self):
         """
@@ -308,12 +309,19 @@ class Bingo:
         sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
         
         pairs = []
-        ids = list(self._players_info.keys())
-        ids.sort()
+
         for id in ids:
             pairs.append((self._players_info[id]["params"], self._players_info[id]["commitment"]))
-
-        return pairs, "Bingo/signature.pem"
+        
+        if self._blockchain is not None:
+            # send commit block
+            # dict {player_id: (commitment, params, signature_path)}
+            data = {}
+            for id in self._players_info.keys():
+                data[id] = (self._players_info[id]["commitment"], self._players_info[id]["params"], self._players_info[id]["signature"])
+            return self._blockchain.add_block('commit', data)
+        else:
+            return pairs, "Bingo/signature.pem"
     
     def receive_opening(self, id, contribution, randomness):
         """ 
@@ -391,7 +399,16 @@ class Bingo:
                 f.write(concat)
             sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
             self._final_string = self.__compute_final_string()
-            return openings, "Bingo/signature.pem"
+            
+            if self._blockchain != None:
+                # send openings block
+                # dict {player_id: (randomness, contribution)}
+                data = {}
+                for id in self._players_info.keys():
+                    data[id] = (self._players_info[id]["opening"]["randomness"], self._players_info[id]["opening"]["contribution"])
+                return self._blockchain.add_block('open', data)
+            else:
+                return openings, "Bingo/signature.pem"
         else:
             raise Exception("Commitments not valid.")
         
