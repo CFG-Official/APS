@@ -20,23 +20,18 @@ class AbstractBlock(ABC):
         self._signature = self.__compute_signature(private_key)
         
 
-    @property
     def get_public_key(self):
         return self._public_key
 
-    @property
     def get_previous_hash(self):
         return self._previous_hash
 
-    @property
     def get_timestamp(self):
         return self._timestamp
 
-    @property
     def get_data(self):
         return self._data
 
-    @property
     def get_hash(self):
         return self._hash
 
@@ -82,11 +77,11 @@ class PreGameBlock(AbstractBlock):
         super().__init__(blockchain_directory_path, 0, public_key, private_key ,previous_hash, data)
 
     def __str__(self):
-        output = '-----START PRE GAME BLOCK-----\n'
+        output = '---------------START PRE GAME BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
         output += f'Signature: {self._signature}\n'
-        output += '-----END PRE GAME BLOCK-----\n'
+        output += '---------------END PRE GAME BLOCK---------------\n\n'
         return output
 
 
@@ -96,11 +91,11 @@ class CommitBlock(AbstractBlock):
         super().__init__(blockchain_directory_path, block_number, public_key, private_key, previous_hash, data)
 
     def __str__(self):
-        output = '-----START COMMIT BLOCK-----\n'
+        output = '\n\n---------------START COMMIT BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
         output += f'Signature: {self._signature}\n'
-        output += '-----END COMMIT BLOCK-----\n'
+        output += '---------------END COMMIT BLOCK---------------\n\n'
         return output
     
 class RevealBlock(AbstractBlock):
@@ -109,9 +104,9 @@ class RevealBlock(AbstractBlock):
         super().__init__(blockchain_directory_path, block_number, public_key, private_key, previous_hash, data)
 
     def __str__(self):
-        output = '-----START REVEAL BLOCK-----\n'
+        output = '\n\n---------------START REVEAL BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
         output += f'Signature: {self._signature}\n'
-        output += '-----END REVEAL BLOCK-----\n'
+        output += '---------------END REVEAL BLOCK---------------\n\n'
         return output
