@@ -2,36 +2,27 @@ import sys, os, datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
 
 from user import User
+from participant import Participant
 from merkle import merkle_proof
 from utils.hash_util import compute_hash_from_data
-from utils.bash_util import execute_command
 from utils.keys_util import concatenate, sign_ECDSA, verify_ECDSA
-from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
 from utils.hash_util import compute_hash_from_data
 from src.utils.keys_util import *
 from blocks import *
 
-class Player(User):
+class Player(User, Participant):
     
     """ 
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain', '_state']
+    __slots__ = ['_final_string', '_contr_comm', '_contr_open', '_SK_BC', '_PK_BC', '_blockchain', '_state']
 
     def __init__(self, CIE_fields):
-        super().__init__(CIE_fields)
-        self._game_code = None
-        self._player_id = None
-        self._round = 0
+        User.__init__(self,CIE_fields)
+        Participant.__init__(self)
         self._auth_id = None
-        self._last_message = None
-        self._seed = None
-        self._IV = None
-        self._last_contribute = None
-        self._last_randomess = None
-        self._security_param = 32 # (in bytes) -> 256 bits
         self._contr_comm = []
         self._contr_open = []
         self._state = []
@@ -138,127 +129,6 @@ class Player(User):
         return clear_values, proofs, indices    
     
     # GAME    
-
-    def start_game(self, game_code, player_id, blocks = False):
-        """ 
-        Start a game.
-        # Arguments
-            game_code: string
-                The game code.
-            player_id: string
-                The player id.
-        """
-        self._blockchain = blocks
-        self.set_game_code(game_code)
-        self.set_player_id(player_id)
-        self._round = 0
-
-        # Inizializzo la PRF per il calcolo dei contributi casuali
-        self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
-        self._seed = rand_extract(self._security_param, "base64")
-
-    def end_game(self):
-        """ 
-        End a game.
-        """
-        self._game_code = None
-        self._player_id = None
-        self._round = 0
-
-        self._IV = None
-        self._seed = None
-
-    def set_game_code(self, game_code):
-        """
-        Set the game code.
-        # Arguments
-            game_code: string
-                The game code.
-        """
-        if game_code is None:
-            raise Exception("Game code not set.")
-                
-        self._game_code = game_code
-
-    def set_player_id(self, player_id):
-        """
-        Set the player id.
-        # Arguments
-            player_id: string
-                The player id.
-        """
-        if player_id is None:
-            raise Exception("Player id not set.")
-
-        self._player_id = player_id
-
-    def __generate_message(self):
-        """
-        Generate the message to be sent to the sala bingo in commitment phase.
-        # Returns
-            message: tuple -> (params: tuple -> (player_id, game_code, round, timestamp),
-                                comm: string 
-                                signature: string)
-                The message to be sent to the sala bingo.
-        """
-        # If no game is started, no message can be computed
-        if self._game_code is None or self._player_id is None:
-            raise Exception("Game code or player id not set. This player isn't in a game.")
-        
-        # Set the 
-        self._round += 1 # Go to next round
-        params = (self._player_id, self._game_code, str(self._round), str(datetime.now()))
-
-        # Compute commitment for a certain round
-        comm = self.__compute_commitment()
-
-        # Sign the message made by params and commitment
-        signature = self.__sign_message(concatenate(*list(params), *comm))
-
-        self._last_message = (params, comm, signature)
-
-        return self._last_message
-
-    def __compute_commitment(self):
-        """
-        Extract randomly a contribution for a round and compute the commitment.
-        # Returns
-            commitment: string
-                The commitment of the contribution.
-        """
-        # Compute the PRF output
-        prf_output = execute_command(commands["get_prf_value"](self._seed, self._IV)).split('= ')[1].strip()
-        # Update the IV
-        self._IV = (self._IV + 1) % (self._security_param)
-
-        # Divide output in two equal parts: the first is the contribution, the second is the randomness used to commit
-        self._last_contribute = prf_output[:len(prf_output)//2]
-        self._last_randomess = prf_output[len(prf_output)//2:]
-
-        return compute_hash_from_data(self._last_contribute + self._last_randomess)
-    
-    def __sign_message(self, message):
-        """
-        Sign a message.
-        # Arguments
-            message: string
-                The message to be signed.
-        # Returns
-            signature: string
-                The signature of the message.   
-        """
-        if message is None:
-            raise Exception("Message is None. Can't sign a None message.")
-        
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
-        sign_filename = self._user_name+'/'+self._user_name+'_comm_sign.pem'
-
-        with open(temp_filename, "w") as f:
-            f.write(message)
-
-        # sign the message
-        sign_ECDSA(self._SK_GP, temp_filename, sign_filename)
-        return sign_filename
     
     def send_commitment(self): # Nome da cambiare, non è solo il commitment
         """
@@ -272,7 +142,7 @@ class Player(User):
             signature: string
                 The signature of the player on the commitment.
         """
-        return self.__generate_message()
+        return super().generate_message(self._SK_GP, self._user_name)
     
     def receive_signature(self, signature):
         """ 
@@ -383,14 +253,14 @@ class Player(User):
             concat += opening[0]
         return compute_hash_from_data(concat)
     
-    def __verify_commitments(self):
+    def __verify_commitments(self, contr_comm, contr_open):
         """
         Verify that the commitments received really contains openings receivede.
         # Returns
             true if the commitments are valid, false otherwise.
         """
 
-        for contr, opening in zip(self._contr_comm, self._contr_open):
+        for contr, opening in zip(contr_comm, contr_open):
             res = hash_concat_data_and_known_rand(opening[0], opening[1])
             if contr[1] != res:
                 return False
@@ -413,7 +283,7 @@ class Player(User):
             
             temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
 
-            if self.__verify_commitments():
+            if self.__verify_commitments(self._contr_comm, self._contr_open):
                 # Compute the concatenation of commit messages and openings messages in order
                 # to verify the signature of sala bingo
                 concat = ""
@@ -447,7 +317,7 @@ class Player(User):
                 self._contr_comm.append(self._state[-1].get_data()[id])
             
             # verify commitments openings 
-            if self.__verify_commitments():
+            if self.__verify_commitments(self._contr_comm, self._contr_open):
                             
                 # if all is ok, add the block to the player's state
                 self._state.append(openings)

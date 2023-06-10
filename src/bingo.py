@@ -1,6 +1,7 @@
 import sys, os, datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
 
+from participant import Participant
 from utils.bash_util import execute_command
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand
@@ -8,18 +9,20 @@ from utils.certificates_util import extract_public_key
 from merkle import verify_proof
 from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA, concatenate
 from utils.hash_util import compute_hash_from_data
+from utils.pseudorandom_util import rand_extract
 from blockchain import Blockchain
 import random
 
-class Bingo:
+class Bingo(Participant):
     
     """ 
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code', '_last_auth_id','_current_commitment_block','_current_opening_block']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_last_auth_id','_current_commitment_block','_current_opening_block']
     
     def __init__(self):
+        Participant.__init__(self)
         self._blockchain = None
         execute_command(commands["create_directory"]("Bingo"))
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
@@ -32,7 +35,6 @@ class Bingo:
         self._PK = "Bingo/public_key.pem"
         self._last_id = 0
         self._last_auth_id = 0
-        self._game_code = random.randint(0,1000000)
         self._current_commitment_block = None
         self._current_opening_block = None
         
@@ -252,6 +254,25 @@ class Bingo:
         return self.__validate_clear_fields(policy,clear_fields, proofs, indices, auth_id)
         
     # GAME
+    
+    def start_game(self):
+        """ 
+        Start the game.
+        # Returns
+            boolean
+                True if the game is started, False otherwise.
+        """
+        # Inizializzo la PRF per il calcolo dei contributi casuali
+        self._player_id = str(self._last_id)
+        self._last_id += 1
+        
+        self._game_code = str(random.randint(0,1000000))
+        self._round = 0
+        
+        self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
+        self._seed = rand_extract(self._security_param, "base64")
+        
+        super().generate_message(self._SK, "Bingo")
         
     def receive_commitment(self, params, commitment, signature):
         """ 
@@ -305,6 +326,15 @@ class Bingo:
                 The signature of the sala bingo on the concatenation between the params
                 and the commitment.
         """
+        # the server adds its own paramsa, commitment and signature
+        self._players_info[str(self._player_id)] = {}
+        self._players_info[str(self._player_id)]["params"] = self._last_message[0]
+        self._players_info[str(self._player_id)]["commitment"] = self._last_message[1]
+        self._players_info[str(self._player_id)]["signature"] = self._last_message[2]
+        
+        concat = concatenate(*self._last_message[0], self._last_message[1])
+        self._players_info[str(self._player_id)]["concat_1"] = concat
+        
         concat = ""
         ids = list(self._players_info.keys())
         ids.sort()
@@ -392,6 +422,8 @@ class Bingo:
                 The signature of the sala bingo on the concatenation of all the commitments
                 and the openings.
         """
+        self._players_info[str(self._player_id)]["opening"] = {"contribution": self._last_contribute, "randomness": self._last_randomess}
+        
         openings = []
         ids = list(self._players_info.keys())
         ids.sort()

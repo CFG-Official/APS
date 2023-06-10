@@ -43,6 +43,7 @@ def main():
 
     # The user is now authenticated and can play
     print("---------- GAME STARTING ----------")
+    bingo.start_game()
     alice.start_game(game_code,alice_id, res_validation_alice[2])
     bob.start_game(game_code,bob_id, res_validation_bob[2])
     
