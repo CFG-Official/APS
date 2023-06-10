@@ -33,8 +33,7 @@ class Blockchain:
     
     def add_block(self, block_type: str, data: dict):
         block_count = len(self.__block_list)
-        #print("Last block: ", type(self.__last_block))
-        if block_type not in ['pre_game', 'commit', 'reveal', 'end_game']:
+        if block_type not in ['pre_game', 'commit', 'reveal', 'dispute', 'end_game']:
             raise TypeError('Invalid block type!')
         
         if block_type == 'pre_game':
@@ -63,6 +62,18 @@ class Blockchain:
                 self.__check_entry_reveal(user_id, user_reveal)
             
             self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+        
+        
+        elif block_type == 'dispute':
+            if block_count <= 0:
+                raise ValueError('Dispute block must be at least the second block!')
+            
+            for user_id, user_dispute in data.items():
+                self.__check_entry_dispute(user_id, user_dispute)
+            
+            self.__last_block = DisputeBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+        
+        
         
         elif block_type == 'end_game':
             if block_count <= 2:
@@ -142,3 +153,11 @@ class Blockchain:
         if not isinstance(user_signature, str):
             raise TypeError(f'User {user_id} signature is not a string')
         return user_signature
+    
+
+    @final
+    def __check_entry_dispute(self, user_id: str, user_dispute: tuple):
+        Blockchain.__check_user_id(user_id)
+        if not isinstance(user_dispute, tuple) or (len(user_dispute) != 2 and len(user_dispute) != 3):
+            raise TypeError(f'User {user_id} dispute is not a Tuple of 2 or 3 elements!')
+        return user_dispute

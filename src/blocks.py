@@ -14,7 +14,7 @@ class AbstractBlock(ABC):
     _internal_block_header = "----------START HEADER BLOCK----------\n"
     _internal_block_footer = "----------END HEADER BLOCK----------\n"
     _internal_block_data_header = "----------START DATA BLOCK----------\n"
-    _internal_block_data_footer = "\n----------END DATA BLOCK----------\n"
+    _internal_block_data_footer = "----------END DATA BLOCK----------\n"
 
     def __init__(self, blockchain_directory_path:str ,block_number: int, public_key_file: str, private_key_file: str, previous_hash: str, data: dict):
         self._blockchain_directory_path = blockchain_directory_path
@@ -154,7 +154,7 @@ class CommitBlock(AbstractBlock):
     def _data_string(self):
         output = self._internal_block_data_header
         for user_id, user_commit in self._data.items():
-            output += f'(User: {user_id} - [Parameter: {user_commit[0]} - Commitment: {user_commit[1]} - Player Signature: {user_commit[2]}])\n'
+            output += f'(User: {user_id} - [Parameter: {user_commit[0]} - Commitment: {user_commit[1]} - Player Signature: {AbstractBlock.binary_to_hex(user_commit[2])}])\n'
         output += self._internal_block_data_footer
         return output
     
@@ -203,4 +203,35 @@ class PostGameBlock(AbstractBlock):
     
     def _verify_block(self):
         pass
-    
+
+class DisputeBlock(AbstractBlock):
+        
+        def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
+            super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data)
+        
+        def __str__(self):
+            output = '\n\n---------------START DISPUTE BLOCK---------------\n'
+            output += self._body_string()
+            output += f'HashBlock: {self._hash}\n'
+            output += f'Signature: {self._signature_string}\n'
+            output += '---------------END DISPUTE BLOCK---------------'
+            return output
+            
+        def _data_string(self):
+            output = self._internal_block_data_header
+            
+            if len(self._data.values()[0]) == 2:    
+                for user_id, user_dispute in self._data.items():
+                    output += f'(User: {user_id} - [Reveal: {user_dispute[0]} - Randomness: {user_dispute[1]}])\n'
+            elif len(self._data.values()[0]) == 3:
+                for user_id, user_dispute in self._data.items():
+                    output += f'(User: {user_id} - [Parameter: {user_dispute[0]} - Commitment: {user_dispute[1]} - Player Signature: {AbstractBlock.binary_to_hex(user_dispute[2])}])\n'
+            else:
+                raise AttributeError('Dispute data does not have the correct format.')
+            
+            
+            output += self._internal_block_data_footer
+            return output
+        
+        def _verify_block(self):
+            pass
