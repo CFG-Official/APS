@@ -178,6 +178,7 @@ class AS:
             f.write(ext)
         
         sign_cert_with_extension(csr, name+"_GP.cert", "src/configuration_files/AS.cnf", "src/configuration_files/AS_extensions.cnf")
+        print("-> AS: GP certificate released.")
         
         return name+"_GP.cert", pairs
 
