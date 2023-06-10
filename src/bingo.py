@@ -5,7 +5,7 @@ from utils.bash_util import execute_command
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand
 from utils.certificates_util import extract_public_key
-from merkle import merkle_proof, verify_proof
+from merkle import verify_proof
 from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA, concatenate
 from utils.hash_util import compute_hash_from_data
 
@@ -15,9 +15,10 @@ class Bingo:
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_contr_comm','_contr_open', '_final_string']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_contr_comm','_contr_open', '_final_string', '_blockchain']
     
     def __init__(self):
+        self._blockchain = None
         execute_command(commands["create_directory"]("Bingo"))
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
         self._known_CAs = ["Bingo/AS.cert"]
@@ -28,6 +29,27 @@ class Bingo:
         gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
         self._SK = "Bingo/private_key.pem"
         self._PK = "Bingo/public_key.pem"
+        
+    # BLOCKCHAIN VERSION
+    def get_blockchain(self):
+        """
+        Get the blockchain.
+        # Returns
+            Blockchain
+                The blockchain.
+        """
+        if self._blockchain is None:
+            raise Exception("Blockchain is None")
+        return self._blockchain
+    
+    def set_blockchain(self, blockchain):
+        """
+        Set the blockchain.
+        # Arguments
+            blockchain: Blockchain
+                The blockchain.
+        """
+        self._blockchain = blockchain
         
     # AUTHENTICATION
     def get_PK(self):
