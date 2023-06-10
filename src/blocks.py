@@ -8,19 +8,20 @@ import binascii
 from typing import final
 
 class AbstractBlock(ABC):
-    __slots__ = ['_blockchain_directory_path','_block_number', '_public_key_file' ,'_hash', '_previous_hash', '_timestamp', '_data', '_signature_string', '_signature_file', '_on_chain']
+    __slots__ = ['_blockchain_directory_path','_block_number', '_public_key_file' ,'_hash', '_previous_hash', '_timestamp', '_data', '_signature_string', '_signature_file', '_on_chain', '_game_code']
 
     _internal_block_header = "----------START HEADER BLOCK----------\n"
     _internal_block_footer = "----------END HEADER BLOCK----------\n"
     _internal_block_data_header = "----------START DATA BLOCK----------\n"
     _internal_block_data_footer = "----------END DATA BLOCK----------\n"
 
-    def __init__(self, blockchain_directory_path:str ,block_number: int, public_key_file: str, private_key_file: str, previous_hash: str, data: dict, on_chain: bool = False):
+    def __init__(self, blockchain_directory_path:str ,block_number: int, public_key_file: str, private_key_file: str, previous_hash: str, game_code: str ,data: dict, on_chain: bool = False):
         self._blockchain_directory_path = blockchain_directory_path
         self._block_number = block_number
         self._public_key_file = public_key_file
         self._previous_hash = previous_hash
         self._on_chain = on_chain
+        self._game_code = game_code
         self._timestamp = datetime.today()
         self._data = data
         self._hash = self.__compute_hash()
@@ -77,6 +78,7 @@ class AbstractBlock(ABC):
         output = self._internal_block_header
         output += f'Block Number: {self._block_number}\n'
         output += f'On Chain: {self._on_chain}\n'
+        output += f'Game Code: {self._game_code}\n'
         output += 'Public Key: ' + public_key + '\n'
         output += f'Timestamp: {self._timestamp}\n'
         output += f'PreviousHash: {self._previous_hash}\n'
@@ -115,9 +117,9 @@ class AbstractBlock(ABC):
 
 class PreGameBlock(AbstractBlock):
 
-    def __init__(self, blockchain_directory_path, public_key_file, private_key_file, data):
+    def __init__(self, blockchain_directory_path, public_key_file, private_key_file, game_code, data):
         previous_hash = rand_extract(32, 'hex')
-        super().__init__(blockchain_directory_path, 0, public_key_file, private_key_file ,previous_hash, data, True)
+        super().__init__(blockchain_directory_path, 0, public_key_file, private_key_file ,previous_hash, game_code, data, True)
 
     def __str__(self):
         output = '---------------START PRE GAME BLOCK---------------\n'
@@ -142,8 +144,8 @@ class PreGameBlock(AbstractBlock):
 
 class CommitBlock(AbstractBlock):
 
-    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain: bool = False):
-        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain)
+    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data, on_chain: bool = False):
+        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data, on_chain)
 
     def __str__(self):
         output = '\n\n---------------START COMMIT BLOCK---------------\n'
@@ -166,8 +168,8 @@ class CommitBlock(AbstractBlock):
     
 class RevealBlock(AbstractBlock):
 
-    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain: bool = False):
-        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain)
+    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data, on_chain: bool = False):
+        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data, on_chain)
 
     def __str__(self):
         output = '\n\n---------------START REVEAL BLOCK---------------\n'
@@ -190,8 +192,8 @@ class RevealBlock(AbstractBlock):
 
 class PostGameBlock(AbstractBlock):
     
-    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
-        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, True)
+    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data):
+        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data, True)
     
     def __str__(self):
         output = '\n\n---------------START POST GAME BLOCK---------------\n'
@@ -202,15 +204,19 @@ class PostGameBlock(AbstractBlock):
         return output
         
     def _data_string(self):
-        pass
+        output = self._internal_block_data_header
+        for user_id, user_post_game in self._data.items():
+            output += f'(User: {user_id} - [The winner is {user_post_game[0]} for #GameCode: {user_post_game[1]} - Player Signature: {AbstractBlock.binary_to_hex(user_post_game[2])}])\n'
+        output += self._internal_block_data_footer
+        return output
     
     def _verify_block(self):
         pass
 
 class DisputeBlock(AbstractBlock):
         
-        def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
-            super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, True)
+        def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code, data):
+            super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, game_code,data, True)
         
         def __str__(self):
             output = '\n\n---------------START DISPUTE BLOCK---------------\n'
