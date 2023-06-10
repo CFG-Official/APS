@@ -1,13 +1,13 @@
-import sys
 from player import Player
 from bingo import Bingo
 from AS import AS
 from DPA import DPA
-from evilbingo import EvilBingo
-
 import AS_authentication as AS_util
 import bingo_authentication as bingo_util
 import round
+import time
+
+performance = {}
 
 def main():
     # A user requires a GP to play
@@ -17,22 +17,26 @@ def main():
     print("---------- GP REQUEST ----------")
     print("-> ", alice.get_name(), "Requires the GP to the AS...")
     print("-> ", bob.get_name(), "Requires the GP to the AS...")
-
+    start_time = time.time()
     authority = AS()
-    AS_util.authentication(alice, authority)    
+    AS_util.authentication(alice, authority)
+    performance["Alice Authentication"] = time.time() - start_time
+    start_time = time.time()
     AS_util.authentication(bob, authority)
+    performance["Bob Authentication"] = time.time() - start_time
 
     # The user now owns a GP and wants to authenticate to the sala bingo
     print("---------- Bingo AUTHENTICATION ----------")
     #bingo = EvilBingo()
+    start_time = time.time()
     bingo = Bingo()
     bingo.set_blockchain()
     alice.set_auth_id(bingo_util.authentication(alice,bingo))
     bob.set_auth_id(bingo_util.authentication(bob,bingo))
-
+    performance["Bingo Authentication"] = time.time() - start_time
     print("---------- Bingo VALIDATION ----------")
     policy = DPA().choose_policy()
-
+    start_time = time.time()
     res_validation_alice = bingo_util.validation(alice,bingo,policy)
     res_validation_bob = bingo_util.validation(bob,bingo,policy)
 
@@ -40,13 +44,14 @@ def main():
         print("Player Alice is not allowed to play")
     if res_validation_bob is None:
         print("Player Bob is not allowed to play")
-        
+    performance["Bingo Validation"] = time.time() - start_time    
     game_code = res_validation_alice[0]
     alice_id = res_validation_alice[1]
     bob_id = res_validation_bob[1]
 
     # The user is now authenticated and can play
     print("---------- GAME STARTING ----------")
+    start_time = time.time()
     bingo.start_game()
     alice.start_game(game_code,alice_id, res_validation_alice[2])
     bob.start_game(game_code,bob_id, res_validation_bob[2])
@@ -55,9 +60,11 @@ def main():
     bingo.receive_mapping(bob_id, bob.generate_mapping()) # Receive the mapping from the player
     
     bingo.add_pre_game_block()
-
+    performance["Players initializations"] = time.time() - start_time
+    start_time = time.time()
     round.multi_play([alice,bob],bingo)
-    
+    performance["One Round Time"] = time.time() - start_time
+    start_time = time.time()
     winner = bingo.choose_winner()
     
     signs = []
@@ -68,6 +75,12 @@ def main():
     
     bob.end_game()
     alice.end_game()
+    performance["Winner proclamation and end game"] = time.time() - start_time
+
+    print("---------- GAME END ----------")
+    print("---------- PERFORMANCE ----------")
+    for key in performance:
+        print(key, ":", performance[key])
 
 if __name__ == "__main__":
     main()
