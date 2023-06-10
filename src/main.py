@@ -53,6 +53,8 @@ def main():
     
     bingo.add_pre_game_block()
 
+    round.multi_play([alice,bob],bingo)
+
     bob.end_game()
     alice.end_game()
 

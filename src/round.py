@@ -22,8 +22,11 @@ def multi_play(players, bingo):
 
     for player in players:
         # Send opening and receive signature ack
-        player.receive_openings(*bingo.publish_openings())
-        print("Sono il player " + player.get_name() + " e ho ottenuto:", player.get_final_string())
+        if player.receive_openings(*bingo.publish_openings()) is not None:
+            print("Sono il player " + player.get_name() + " e ho ottenuto:", player.get_final_string())
+        else:
+            player.contestate_opening()
+
 
     print("Sono la Sala Bingo e ho ottenuto:", bingo.get_final_string())
 
@@ -61,12 +64,17 @@ def play(user, bingo):
     print("Sono il player " + user.get_name() + " e ho ottenuto:", user.get_final_string())
 
 def receive_commitments_and_signature(player, bingo):
-    if player.receive_commitments_and_signature(*bingo.publish_commitments_and_signature()):
-        # player verifies the signature of the sala bingo on the commitments
-        print("- Valid server signature, opening the contribution...")
+    res = bingo.publish_commitments_and_signature()
+
+    if res is not None:
+        if player.receive_commitments_and_signature(*res):
+            # player verifies the signature of the sala bingo on the commitments
+            print("- Valid server signature, opening the contribution...")
+        else:
+            print("Not valid signature! Terminating...")
+            sys.exit()        
     else:
-        print("Not valid signature! Terminating...")
-        sys.exit()
+        player.contestate_commit()
 
 def send_commit(player, bingo):
     sign = bingo.receive_commitment(*player.send_commitment())

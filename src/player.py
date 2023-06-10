@@ -18,7 +18,7 @@ class Player(User):
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain', '_state']
+    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain', '_state', '_last_opening']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
@@ -139,7 +139,7 @@ class Player(User):
     
     # GAME    
 
-    def start_game(self, game_code, player_id, blocks = False):
+    def start_game(self, game_code, player_id, blockchain = None):
         """ 
         Start a game.
         # Arguments
@@ -148,7 +148,7 @@ class Player(User):
             player_id: string
                 The player id.
         """
-        self._blockchain = blocks
+        self._blockchain = blockchain
         self.set_game_code(game_code)
         self.set_player_id(player_id)
         self._round = 0
@@ -312,7 +312,7 @@ class Player(User):
         """
         temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
         
-        if not self._blockchain:
+        if self._blockchain is None:
 
             if pairs is None or signature is None:
                 raise Exception("Commit pairs or signature are None.")
@@ -368,7 +368,8 @@ class Player(User):
             opening: string
                 The opening as (message, randomness) pair.
         """
-        return self._player_id, self._last_contribute, self._last_randomess
+        self._last_opening = (self._last_contribute, self._last_randomess)
+        return sefl._last_opening
 
     def __compute_final_string(self):
         """
@@ -404,7 +405,7 @@ class Player(User):
             openings: list
                 The list of openings (message, randomness).
         """
-        if not self._blockchain:
+        if self._blockchain is None:
             
             if openings is None or signature is None:
                 raise Exception("Openings or signature are None.")
@@ -500,4 +501,16 @@ class Player(User):
 
         return temp, signature_gp
 
+    def contestate_opening(self):
 
+        if self._blockchain is None:
+            raise Exception("There is no blockchain to contestate.")
+        
+        self._blockchain.add_block("dispute", {self._player_id: self._last_opening})
+
+    def contestate_commit(self):
+
+        if self._blockchain is None:
+            raise Exception("There is no blockchain to contestate.")
+        
+        self._blockchain.add_block("dispute", {self._player_id: self._last_contribute})

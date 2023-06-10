@@ -23,9 +23,9 @@ def validation(user, bingo, policy):
     # validate GP fields according to the daily policy
     clear_fields, merkle_proofs, indices = user.send_clear_fields(policy)
     try:
-        game_code, last_id, blocks = bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices, user.get_auth_id())
+        game_code, last_id, blockchain = bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices, user.get_auth_id())
 
     except:
         print("- Invalid GP! Terminating...")
         return None
-    return game_code, last_id, blocks
+    return game_code, last_id, blockchain
