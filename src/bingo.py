@@ -59,10 +59,18 @@ class Bingo:
     def add_pre_game_block(self):
         """ 
         Add the pre-game block to the blockchain.
+        
+        # Returns
+            list of tuples (id_player, path_PK)
         """
         if len(self._players_info) == 0:
             raise Exception("No players info")
-        self._blockchain.add_block('pre_game', self._players_info)
+        
+        data = {}
+        for id in self._players_info.keys():
+            data[id] = self._players_info[id]['BC_PK']
+        
+        self._blockchain.add_block('pre_game', data)
         
     # AUTHENTICATION
     def __init_player(self):
