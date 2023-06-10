@@ -7,6 +7,8 @@ from utils.commands_util import commands
 from utils.bash_util import execute_command
 from utils.hash_util import compute_hash_from_file
 from merkle import merkle_tree
+from dateutil.relativedelta import relativedelta
+import random
 
 class AS:
     """
@@ -108,7 +110,7 @@ class AS:
             "Nome": pairs[4], 
             "Data di nascita": pairs[2],
             "Tipo di vaccino": "Pfizer",
-            "Data di vaccinazione": str(datetime.date.today()),
+            "Data di vaccinazione": str(datetime.date.today() - relativedelta(months=random.randint(1,7))),
         }
     
     def verify_signature(self, CIE_certificate, signature):

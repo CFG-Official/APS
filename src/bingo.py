@@ -162,13 +162,54 @@ class Bingo:
             # append the hashed value of the concatenation between the value and the randomness
             leaves[key] = hash_concat_data_and_known_rand(value[0],value[1])
             
+        # check for the proofs of the clear fields
         for key, value in proofs.items():
             res = verify_proof(root, value, leaves[key], indices[key])
-            ### AGGIUNGERE VALIDAZIONE VALORE DEI CAMPI ###
             if not res:
                 return False
+        
+        # check for the policy consistency
+        if not self.__check_policy_consistency(policy, clear_fields):
+            return False
             
         return True
+    
+    def __check_policy_consistency(self, policy, clear_fields):
+        """
+        Check if the policy is consistent with the clear fields.
+        # Arguments
+            policy: dict
+                The policy of the DPA. key: field name, value: (constraint, validator)
+            clear_fields: dict
+                The clear fields sent by the user. key: field name, value: (value, randomness)
+        # Returns
+            boolean
+                True if the policy is consistent, False otherwise.
+        """
+        for field, constraints in policy.items():
+            player_value = clear_fields[field][0]
+            print("Validating constraint: ", field)
+            if not (constraints is None) and not self.__check_constraints(constraints, player_value):
+                print("Constraint not satisfied")
+                return False
+        
+        return True
+
+    def __check_constraints(self, constraints, player_value):
+        """
+        Used to check if the constraints are satisfied.
+        # Arguments
+            constraints: tuple
+                The constraints of the field. (constraint, validator)
+            player_value: string
+                The value of the field.
+        # Returns
+            boolean
+                True if the constraints are satisfied, False otherwise.
+        """
+        return constraints[1](player_value, constraints[0])
+        
+
 
     def receive_clear_fields(self,policy,clear_fields, proofs, indices):
         """
@@ -210,12 +251,6 @@ class Bingo:
                 The signature of the sala bingo on the additional parameters and the commitment.
         """
         # concatenate params and commitment
-
-        # concat = ""
-        # for param in params:
-        #     concat += param
-        # concat += commitment
-
         concat = concatenate(*params, commitment)
 
         # verify the signature of the user on the commitment and the additional parameters
