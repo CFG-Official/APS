@@ -33,7 +33,7 @@ class Blockchain:
     
     def add_block(self, block_type: str, data: dict):
         block_count = len(self.__block_list)
-        print("Last block: ", type(self.__last_block))
+        #print("Last block: ", type(self.__last_block))
         if block_type not in ['pre_game', 'commit', 'reveal', 'end_game']:
             raise TypeError('Invalid block type!')
         

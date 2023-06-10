@@ -12,9 +12,11 @@ def main():
     # A user requires a GP to play
     alice = Player(["Alice", "IT", "F", "Rome", "1990-01-01", "CF1"])
     bob = Player(["Bob", "IT", "F", "Rome", "1999-01-01", "CF2"])
+
     print("---------- GP REQUEST ----------")
     print("-> ", alice.get_name(), "Requires the GP to the AS...")
     print("-> ", bob.get_name(), "Requires the GP to the AS...")
+
     authority = AS()
     AS_util.authentication(alice, authority)    
     AS_util.authentication(bob, authority)
@@ -50,7 +52,6 @@ def main():
     bingo.receive_mapping(bob_id, bob.generate_mapping()) # Receive the mapping from the player
     
     bingo.add_pre_game_block()
-    round.multi_play([alice, bob], bingo)
 
     bob.end_game()
     alice.end_game()
