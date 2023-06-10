@@ -9,6 +9,7 @@ from utils.keys_util import concatenate, sign_ECDSA, verify_ECDSA
 from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
 from utils.hash_util import compute_hash_from_data
+from src.utils.keys_util import *
 
 class Player(User):
     
@@ -16,7 +17,7 @@ class Player(User):
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness']
+    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
@@ -28,7 +29,7 @@ class Player(User):
         self._IV = None
         self._last_contribute = None
         self._last_randomess = None
-        self._security_param = 16 # (in bytes) -> 128 bits
+        self._security_param = 32 # (in bytes) -> 256 bits
         self._contr_comm = []
         self._contr_open = []
         self._final_string = None
@@ -114,7 +115,7 @@ class Player(User):
     
     # GAME    
 
-    def start_game(self, game_code, player_id):
+    def start_game(self, game_code, player_id, blocks = False):
         """ 
         Start a game.
         # Arguments
@@ -123,13 +124,14 @@ class Player(User):
             player_id: string
                 The player id.
         """
+        self._blockchain = blocks
         self.set_game_code(game_code)
         self.set_player_id(player_id)
         self._round = 0
 
         # Inizializzo la PRF per il calcolo dei contributi casuali
-        self._IV = int(rand_extract(2*self._security_param, "hex"), 16) # Cast to a 16-bit integer cause it's used as a counter
-        self._seed = rand_extract(2*self._security_param, "base64")
+        self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
+        self._seed = rand_extract(self._security_param, "base64")
 
     def end_game(self):
         """ 
@@ -203,7 +205,7 @@ class Player(User):
         # Compute the PRF output
         prf_output = execute_command(commands["get_prf_value"](self._seed, self._IV)).split('= ')[1].strip()
         # Update the IV
-        self._IV = (self._IV + 1) % (2*self._security_param)
+        self._IV = (self._IV + 1) % (self._security_param)
 
         # Divide output in two equal parts: the first is the contribution, the second is the randomness used to commit
         self._last_contribute = prf_output[:len(prf_output)//2]
@@ -231,7 +233,7 @@ class Player(User):
             f.write(message)
 
         # sign the message
-        sign_ECDSA(self._SK, temp_filename, sign_filename)
+        sign_ECDSA(self._SK_GP, temp_filename, sign_filename)
         return sign_filename
     
     def send_commitment(self): # Nome da cambiare, non è solo il commitment
@@ -269,7 +271,7 @@ class Player(User):
         
         return False
     
-    def receive_commitments_and_signature(self, pairs, signature):
+    def receive_commitments_and_signature(self, pairs, signature = None):
         """
         The player receives the commitments, the parameters of other player
         and the signature of the sala bingo on them. 
@@ -284,28 +286,35 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
-        if pairs is None or signature is None:
-            raise Exception("Commit pairs or signature are None.")
-
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
         
-        self._contr_comm = pairs
+        if not self._blockchain:
+            print(pairs, signature)
+            if pairs is None or signature is None:
+                raise Exception("Commit pairs or signature are None.")
 
-        concat = ""
-        for pair in pairs:
-            for param in pair[0]:
-                concat += param
-            concat += pair[1]
-        
-        with open(temp_filename, "w") as f:
-            f.write(concat)
+            temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+            
+            self._contr_comm = pairs
 
-        # Verify that the received signature is valid
-        if verify_ECDSA(self._bingo_PK, temp_filename, signature):
-            self._bingo_sign_on_comm = signature
-            return True
+            concat = ""
+            for pair in pairs:
+                for param in pair[0]:
+                    concat += param
+                concat += pair[1]
+            
+            with open(temp_filename, "w") as f:
+                f.write(concat)
+
+            # Verify that the received signature is valid
+            if verify_ECDSA(self._bingo_PK, temp_filename, signature):
+                self._bingo_sign_on_comm = signature
+                return True
+            
+            return False
         
-        return False
+        else:
+            # process block
+            pass
     
     def send_opening(self):
         """ 
@@ -314,7 +323,7 @@ class Player(User):
             opening: string
                 The opening as (message, randomness) pair.
         """
-        return self._last_contribute, self._last_randomess
+        return self._player_id, self._last_contribute, self._last_randomess
 
     def __compute_final_string(self):
         """
@@ -341,7 +350,7 @@ class Player(User):
                 return False
         return True
     
-    def receive_openings(self, openings, signature):
+    def receive_openings(self, openings, signature = None):
         """ 
         The player receives the openings from the sala bingo and computes
         the final string.
@@ -349,28 +358,34 @@ class Player(User):
             openings: list
                 The list of openings (message, randomness).
         """
-        if openings is None or signature is None:
-            raise Exception("Openings or signature are None.")
+        if not self._blockchain:
+            
+            if openings is None or signature is None:
+                raise Exception("Openings or signature are None.")
 
-        self._contr_open = openings
+            self._contr_open = openings
+            
+            temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+
+            if self.__verify_commitments():
+                # Compute the concatenation of commit messages and openings messages in order
+                # to verify the signature of sala bingo
+                concat = ""
+                for contr, opening in zip(self._contr_comm, self._contr_open):
+                    concat += concatenate(*contr[0], contr[1], opening[0], opening[1])
+                with open(temp_filename, "w") as f:
+                    f.write(concat)
+
+                # Verify the signature of sala bingo
+                res = verify_ECDSA(self._bingo_PK, temp_filename, signature)
+                self._final_string = self.__compute_final_string()
+                return res
+            else:
+                raise Exception("Commitments not valid.")
         
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
-
-        if self.__verify_commitments():
-            # Compute the concatenation of commit messages and openings messages in order
-            # to verify the signature of sala bingo
-            concat = ""
-            for contr, opening in zip(self._contr_comm, self._contr_open):
-                concat += concatenate(*contr[0], contr[1], opening[0], opening[1])
-            with open(temp_filename, "w") as f:
-                f.write(concat)
-
-            # Verify the signature of sala bingo
-            res = verify_ECDSA(self._bingo_PK, temp_filename, signature)
-            self._final_string = self.__compute_final_string()
-            return res
         else:
-            raise Exception("Commitments not valid.")
+            # process block
+            pass
         
     def get_final_string(self):
         """
@@ -381,3 +396,34 @@ class Player(User):
         """
         return self._final_string
         
+    def generate_mapping(self):
+        """
+        Generate a message containg a new public key with a signature using
+        the new private key (Fiat Shamir 86).
+        """
+
+        # Generate a new key pair using ECDSA
+        print("Generating new key pair for mapping...")
+        base_filename = self._user_name+'/'+ 'BC_mapping_'
+        self._SK_BC = base_filename + 'private_key.pem'
+        self._PK_BC = base_filename + 'public_key.pem'
+        gen_ECDSA_keys('prime256v1', base_filename + 'param.pem', self._SK_BC, self._PK_BC)
+        
+        # Fiat-Shamir 86 protocol with mapping key
+        print("Generating signature for mapping...")
+        signature_bc = self._user_name+'/'+self._user_name+'_BC_mapping_sign.pem'
+        with open(self._user_name + "/void_file.txt", "w") as f:
+                f.write('')
+        sign_ECDSA(self._SK_BC, self._user_name + "/void_file.txt", signature_bc)
+        temp = (self._PK_BC, signature_bc)
+
+        # Shnorr signature with GP key
+        print("Generating signature for mapping...")
+        signature_gp = self._user_name+'/'+self._user_name+'_GP_mapping_sign.pem'
+        with open(self._user_name + "/_temp_sign_mapping.txt", "w") as f:
+                f.write(concatenate(*temp))
+        sign_ECDSA(self._SK_GP, self._user_name + "/_temp_sign_mapping.txt", signature_gp)
+
+        return temp, signature_gp
+
+

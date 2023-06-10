@@ -17,7 +17,7 @@ class Bingo:
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_contr_comm','_contr_open', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code']
     
     def __init__(self):
         self._blockchain = None
@@ -25,8 +25,6 @@ class Bingo:
         execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
         self._known_CAs = ["Bingo/AS.cert"]
         self._GPs = []
-        self._contr_comm = []
-        self._contr_open = []
         self._players_info = {}
         self._final_string = None
         gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
@@ -61,10 +59,18 @@ class Bingo:
     def add_pre_game_block(self):
         """ 
         Add the pre-game block to the blockchain.
+        
+        # Returns
+            list of tuples (id_player, path_PK)
         """
         if len(self._players_info) == 0:
             raise Exception("No players info")
-        self._blockchain.add_block('pre_game', self._players_info)
+        
+        data = {}
+        for id in self._players_info.keys():
+            data[id] = self._players_info[id]['BC_PK']
+        
+        self._blockchain.add_block('pre_game', data)
         
     # AUTHENTICATION
     def __init_player(self):
@@ -72,7 +78,8 @@ class Bingo:
         Initialize the player.
         """
         self._last_id += 1
-        return str(self._game_code), str(self._last_id-1)
+        blocks = True if self._blockchain is not None else False
+        return str(self._game_code), str(self._last_id-1), blocks
     
     def get_PK(self):
         """
@@ -213,6 +220,7 @@ class Bingo:
                 raise Exception("Invalid proof")
             
         self._players_info[str(self._last_id)] = {}
+        
         return self.__init_player()
 
     def receive_clear_fields(self,policy,clear_fields, proofs, indices):
@@ -255,7 +263,12 @@ class Bingo:
                 The signature of the sala bingo on the additional parameters and the commitment.
         """
         # concatenate params and commitment
+        id = params[0][0]
         concat = concatenate(*params, commitment)
+        self._players_info[id]["params"] = params
+        self._players_info[id]["commitment"] = commitment
+        self._players_info[id]["signature"] = signature
+        self._players_info[id]["concat_1"] = concat
 
         # verify the signature of the user on the commitment and the additional parameters
         # using the PK contained in the GP certificate
@@ -265,7 +278,6 @@ class Bingo:
         if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", signature):
             # compute the signature of the sala bingo on all of them
             concat += signature
-            self._contr_comm.append((params, commitment))
             with open("Bingo/concat.txt", "w") as f:
                 f.write(concat)
             sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
@@ -284,26 +296,39 @@ class Bingo:
                 The signature of the sala bingo on the concatenation between the params
                 and the commitment.
         """
-
         concat = ""
-        for contr in self._contr_comm:
-            for param in contr[0]:
-                concat += param
-            concat += contr[1] # params + commitment
+        ids = list(self._players_info.keys())
+        ids.sort()
+        
+        for id in ids:
+            concat += self._players_info[id]["concat_1"]# params + commitment
 
         with open("Bingo/concat.txt", "w") as f:
             f.write(concat) 
 
         sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+        
+        pairs = []
 
-        return self._contr_comm, "Bingo/signature.pem"
+        for id in ids:
+            pairs.append((self._players_info[id]["params"], self._players_info[id]["commitment"]))
+        
+        if self._blockchain is not None:
+            # send commit block
+            # dict {player_id: (commitment, params, signature_path)}
+            data = {}
+            for id in self._players_info.keys():
+                data[id] = (self._players_info[id]["commitment"], self._players_info[id]["params"], self._players_info[id]["signature"])
+            return self._blockchain.add_block('commit', data)
+        else:
+            return pairs, "Bingo/signature.pem"
     
-    def receive_opening(self, contribution, randomness):
+    def receive_opening(self, id, contribution, randomness):
         """ 
         The sala bingo receives the opening from the user.
         """
         # append the opening to the list of openings
-        self._contr_open.append((contribution, randomness))
+        self._players_info[id]["opening"] = {"contribution": contribution, "randomness": randomness}
         
     def __compute_final_string(self):
         """
@@ -315,8 +340,11 @@ class Bingo:
         """
         # hash the concatenation of all the openings
         concat = ""
-        for opening in self._contr_open:
-            concat += opening[0]
+        ids = list(self._players_info.keys())
+        ids.sort()
+        
+        for id in ids:
+            concat += self._players_info[id]["opening"]["contribution"]
         
         return compute_hash_from_data(concat)
 
@@ -328,9 +356,13 @@ class Bingo:
                 True if the commitments are valid, False otherwise.
         """
         # verify the commitments
-        for contr, opening in zip(self._contr_comm, self._contr_open):
-            if contr[1] != hash_concat_data_and_known_rand(opening[0], opening[1]):
+        
+        ids = list(self._players_info.keys())
+        ids.sort()
+        for id in ids:
+            if self._players_info[id]["commitment"] != hash_concat_data_and_known_rand(self._players_info[id]["opening"]["contribution"], self._players_info[id]["opening"]["randomness"]):
                 return False
+
         return True
 
     def publish_openings(self):
@@ -348,20 +380,35 @@ class Bingo:
                 and the openings.
         """
         openings = []
-        for opening in self._contr_open:
-            openings.append((opening[0], opening[1]))
+        ids = list(self._players_info.keys())
+        ids.sort()
+        
+        for id in ids:
+            openings.append((self._players_info[id]["opening"]["contribution"], self._players_info[id]["opening"]["randomness"]))
             
         if self.__verify_commitments():
             concat = ""
-            for contr, opening in zip(self._contr_comm, self._contr_open):
-                for param in contr[0]:
-                    concat += param
-                concat += contr[1] + opening[0] + opening[1] # params + commitment + message + randomness
+            
+            ids = list(self._players_info.keys())
+            ids.sort()
+            for id in ids:
+                concat += self._players_info[id]["concat_1"]
+                concat += self._players_info[id]["opening"]["contribution"] + self._players_info[id]["opening"]["randomness"]
+                
             with open("Bingo/concat.txt", "w") as f:
                 f.write(concat)
             sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
             self._final_string = self.__compute_final_string()
-            return openings, "Bingo/signature.pem"
+            
+            if self._blockchain != None:
+                # send openings block
+                # dict {player_id: (randomness, contribution)}
+                data = {}
+                for id in self._players_info.keys():
+                    data[id] = (self._players_info[id]["opening"]["randomness"], self._players_info[id]["opening"]["contribution"])
+                return self._blockchain.add_block('open', data)
+            else:
+                return openings, "Bingo/signature.pem"
         else:
             raise Exception("Commitments not valid.")
         
@@ -370,3 +417,19 @@ class Bingo:
         Returns the final string.
         """
         return self._final_string
+    
+    def receive_mapping(self, player_id, mapping):
+        # Verify signature with the original PK of the player
+        extract_public_key(self._GPs[0], "Bingo/GP_PK.pem")
+        with open("Bingo/concat.txt", "w") as f:
+            f.write(concatenate(*mapping[0]))
+        
+        if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", mapping[1]):
+            # Verify that the mapping is valid, i.e. verify that signature
+            # of the player on the mapping is correctly computed
+            new_pk = mapping[0][0]
+            with open("Bingo/concat.txt", "w") as f:
+                f.write('')
+            if verify_ECDSA(new_pk, "Bingo/concat.txt", mapping[0][1]):
+                self._players_info[player_id]["BC_PK"] = new_pk
+                
