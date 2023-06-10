@@ -175,7 +175,7 @@ pyrightconfig.json
 *.csr
 *.pem
 *.cert
-*.cnf
+**.cnf
 
 # Simulation
 Alice/*

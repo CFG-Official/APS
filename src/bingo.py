@@ -75,7 +75,7 @@ class Bingo(Participant):
         for id in self._players_info.keys():
             data[id] = self._players_info[id]['BC_PK']
         
-        self._blockchain.add_block('pre_game', data)
+        self._blockchain.add_block('pre_game', self._game_code, data)
         
     # AUTHENTICATION
     def __init_player(self):
@@ -83,8 +83,8 @@ class Bingo(Participant):
         Initialize the player.
         """
         self._last_id += 1
-        blocks = True if self._blockchain is not None else False 
-        return str(self._game_code), str(self._last_id-1), blocks
+        # blocks = True if self._blockchain is not None else False 
+        return str(self._game_code), str(self._last_id-1), self._blockchain
 
     
     def get_PK(self):
@@ -129,6 +129,7 @@ class Bingo(Participant):
                 True if the sign is valid, False otherwise.
         """
 
+        #return True
         res = execute_command(commands["validate_certificate"](AS_cert, GP_cert)).split(" ")[1].replace("\n", "").replace(" ", "")
         return True if res == "OK" else False
     
@@ -361,7 +362,7 @@ class Bingo(Participant):
             if self._current_opening_block is not None:
                 self._current_opening_block = None
             if self._current_commitment_block is None:
-                self._current_commitment_block = self._blockchain.add_block('commit', data)
+                self._current_commitment_block = self._blockchain.add_block('commit', self._game_code, data)
             return self._current_commitment_block, ""
         else:
             return pairs, "Bingo/signature.pem"
@@ -454,7 +455,7 @@ class Bingo(Participant):
                 if self._current_commitment_block is not None:
                     self._current_commitment_block = None
                 if self._current_opening_block is None:
-                    self._current_opening_block = self._blockchain.add_block('reveal', data)
+                    self._current_opening_block = self._blockchain.add_block('reveal',self._game_code, data)
                 return self._current_opening_block , ""
             else:
                 return openings, "Bingo/signature.pem"

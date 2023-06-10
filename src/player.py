@@ -182,7 +182,7 @@ class Player(User, Participant):
         """
         temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
         
-        if not self._blockchain:
+        if self._blockchain is None:
 
             if pairs is None or signature is None:
                 raise Exception("Commit pairs or signature are None.")
@@ -238,7 +238,8 @@ class Player(User, Participant):
             opening: string
                 The opening as (message, randomness) pair.
         """
-        return self._player_id, self._last_contribute, self._last_randomess
+        self._last_opening = (self._last_contribute, self._last_randomess)
+        return self._player_id, *self._last_opening
 
     def __compute_final_string(self):
         """
@@ -274,7 +275,7 @@ class Player(User, Participant):
             openings: list
                 The list of openings (message, randomness).
         """
-        if not self._blockchain:
+        if self._blockchain is None:
             
             if openings is None or signature is None:
                 raise Exception("Openings or signature are None.")
@@ -370,4 +371,20 @@ class Player(User, Participant):
 
         return temp, signature_gp
 
+    def contestate_opening(self):
 
+        if self._blockchain is None:
+            raise Exception("There is no blockchain to contestate.")
+        
+        self._blockchain.set_credentials(self._PK_BC, self._SK_BC)
+        self._blockchain.add_block("dispute", {self._player_id: self._last_opening})
+        self._blockchain.reset_server_credentials()
+
+    def contestate_commit(self):
+
+        if self._blockchain is None:
+            raise Exception("There is no blockchain to contestate.")
+        
+        self._blockchain.set_credentials(self._PK_BC, self._SK_BC)
+        self._blockchain.add_block("dispute", {self._player_id: self._last_contribute})
+        self._blockchain.reset_server_credentials()

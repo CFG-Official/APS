@@ -31,10 +31,9 @@ class Blockchain:
         self.__last_block = None
 
     
-    def add_block(self, block_type: str, data: dict):
+    def add_block(self, block_type: str, game_code:str ,data: dict, on_chain: bool = False):
         block_count = len(self.__block_list)
-        print("Last block: ", type(self.__last_block))
-        if block_type not in ['pre_game', 'commit', 'reveal', 'end_game']:
+        if block_type not in ['pre_game', 'commit', 'reveal', 'dispute', 'end_game']:
             raise TypeError('Invalid block type!')
         
         if block_type == 'pre_game':
@@ -44,7 +43,7 @@ class Blockchain:
             for user_id, user_pk_temp in data.items():
                 data[user_id] = self.__check_entry_pre_game(user_id, user_pk_temp)
             
-            self.__last_block = PreGameBlock(self.__blockchain_directory_path, self.__server_public_key_file,self.__server_private_key_file, data)
+            self.__last_block = PreGameBlock(self.__blockchain_directory_path, self.__server_public_key_file,self.__server_private_key_file, game_code,data)
             
         elif block_type == 'commit':
             if block_count <= 0:
@@ -53,7 +52,7 @@ class Blockchain:
             for user_id, user_commit in data.items():
                 self.__check_entry_commit(user_id, user_commit)
             
-            self.__last_block = CommitBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = CommitBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
         
         elif block_type == 'reveal':
             if block_count <= 1:
@@ -62,7 +61,19 @@ class Blockchain:
             for user_id, user_reveal in data.items():
                 self.__check_entry_reveal(user_id, user_reveal)
             
-            self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
+        
+        
+        elif block_type == 'dispute':
+            if block_count <= 0:
+                raise ValueError('Dispute block must be at least the second block!')
+            
+            for user_id, user_dispute in data.items():
+                self.__check_entry_dispute(user_id, user_dispute)
+            
+            self.__last_block = DisputeBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code,data, on_chain)
+        
+        
         
         elif block_type == 'end_game':
             if block_count <= 2:
@@ -71,7 +82,7 @@ class Blockchain:
             for user_id, user_signature in data.items():
                 self.__check_entry_end_game(user_id, user_signature)
 
-            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
         
         
         self.append_last_block_to_file()
@@ -142,3 +153,11 @@ class Blockchain:
         if not isinstance(user_signature, str):
             raise TypeError(f'User {user_id} signature is not a string')
         return user_signature
+    
+
+    @final
+    def __check_entry_dispute(self, user_id: str, user_dispute: tuple):
+        Blockchain.__check_user_id(user_id)
+        if not isinstance(user_dispute, tuple) or (len(user_dispute) != 2 and len(user_dispute) != 3):
+            raise TypeError(f'User {user_id} dispute is not a Tuple of 2 or 3 elements!')
+        return user_dispute

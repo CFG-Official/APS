@@ -7,3 +7,9 @@ rm -r tests/certificates/*
 rm -r tests/keys/*
 rm -r tests/randomness/*
 rm -r tests/hash/*
+rm -r Alice
+rm -r Bob
+rm -r Bingo
+rm -r Blockchain
+rm -r MdI
+rm -r AS/
