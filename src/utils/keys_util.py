@@ -52,6 +52,7 @@ def sign_ECDSA(priv_key_file, data_file, signature_file):
         data_file: The file to sign.
         signature_file: The file to store the signature in.
     """
+        
     BU.execute_command(commands["ECDSA_sign"](data_file, priv_key_file, signature_file))
 
 def sign_ECDSA_from_variable(priv_key_file, data_variable, signature_file):

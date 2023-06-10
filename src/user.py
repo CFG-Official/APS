@@ -111,7 +111,6 @@ class User:
                 The clear fields. 
         """
 
-        print("MARAMEO LOL ")
         self._GP_certificate = GP_certificate
         self._clear_fields = clear_fields
 
