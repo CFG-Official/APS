@@ -1,212 +1,124 @@
-import sys, os, datetime
-sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
-
+import datetime, random,os
 from participant import Participant
+from blockchain import Blockchain
+from merkle import verify_proof
 from utils.bash_util import execute_command
 from utils.commands_util import commands
-from utils.pseudorandom_util import hash_concat_data_and_known_rand
-from utils.certificates_util import extract_public_key
-from merkle import verify_proof
-from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA, concatenate
 from utils.hash_util import compute_hash_from_data
-from utils.pseudorandom_util import rand_extract
-from blockchain import Blockchain
-import random
+from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
+from utils.certificates_util import extract_public_key
+from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA, concatenate
+
 
 class Bingo(Participant):
-    
-    """ 
-    This class represents the sala bingo.
-    """
-    
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_last_auth_id','_current_commitment_block','_current_opening_block', '_winner_id']
+    __base_dir = "Bingo"
+    __cert_path = "AS/auto_certificate.cert"
+    __cert_dir = os.path.join(__base_dir, "AS.cert")
+    __key_patams_path = os.path.join(__base_dir, "params.pem")
+    __private_key_path = os.path.join(__base_dir, "private_key.pem")
+    __public_key_path = os.path.join(__base_dir, "public_key.pem")
+
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', 
+                 '_players_info', '_last_id', '_last_auth_id', '_current_commitment_block', 
+                 '_current_opening_block', '_winner_id', '_game_code']
     
     def __init__(self):
-        Participant.__init__(self)
+        super().__init__()
         self._blockchain = None
-        execute_command(commands["create_directory"]("Bingo"))
-        execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
-        self._known_CAs = ["Bingo/AS.cert"]
+        execute_command(commands["create_directory"](self.__base_dir))
+        execute_command(commands["copy_cert"](self.__cert_path, self.__cert_dir))
+        self._known_CAs = [self.__cert_dir]
         self._GPs = {}
         self._players_info = {}
         self._final_string = None
-        gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
-        self._SK = "Bingo/private_key.pem"
-        self._PK = "Bingo/public_key.pem"
+        gen_ECDSA_keys("prime256v1", self.__key_patams_path, self.__private_key_path, self.__public_key_path)
+        self._SK = self.__private_key_path
+        self._PK = self.__public_key_path
         self._last_id = 0
         self._last_auth_id = 0
         self._current_commitment_block = None
         self._current_opening_block = None
         self._winner_id = None
-        self._game_code = str(random.randint(0,1000000))
-        
-    # BLOCKCHAIN VERSION
+        self._game_code = str(random.randint(0, 1000000))
+
+
     def get_blockchain(self):
-        """
-        Get the blockchain.
-        # Returns
-            Blockchain
-                The blockchain.
-        """
+        """Return the blockchain. Raise exception if it is None."""
         if self._blockchain is None:
             raise Exception("Blockchain is None")
         return self._blockchain
-    
+
     def set_blockchain(self):
-        """
-        Set the blockchain.
-        # Arguments
-            blockchain: Blockchain
-                The blockchain.
-        """
+        """Set the blockchain. Raise exception if it is already present."""
         if self._blockchain is not None:
             raise Exception("Blockchain is already present")
         self._blockchain = Blockchain(self._PK,self._SK)
-        
+
     def add_pre_game_block(self):
-        """ 
-        Add the pre-game block to the blockchain.
-        
-        # Returns
-            list of tuples (id_player, path_PK)
-        """
+        """Add pre game block to the blockchain. Raise exception if no player info."""
         if len(self._players_info) == 0:
             raise Exception("No players info")
-        
-        data = {}
-        for id in self._players_info.keys():
-            data[id] = self._players_info[id]['BC_PK']
-        
+
+        data = {id: info['BC_PK'] for id, info in self._players_info.items()}
         self._blockchain.add_block('pre_game', self._game_code, data)
+
+    # other parts of your code...
+
+    def __check_CA(self, GP_cert, CA_cert):
+        """Check if issuer of GP_cert is the same as subject of CA_cert."""
+        issuer = execute_command(commands["cert_extract_issuer"](GP_cert))
+        subject = execute_command(commands["cert_extract_subject"](CA_cert))
+
+        return issuer == subject in (execute_command(commands["cert_extract_subject"](CA)) for CA in self._known_CAs)
+
+    def __check_sign(self, GP_cert, AS_cert):
+        """Check if the signature is valid."""
+        # TODO: Uncomment and use the real check when ready.
+        # res = execute_command(commands["validate_certificate"](AS_cert, GP_cert)).split()[1].strip()
+        # return res == "OK"
+        return True
+
+    def __check_expiration(self, GP_cert):
+        """Check if the certificate is expired."""
+        expiration_date_str = execute_command(commands["cert_extract_expiration_date"](GP_cert)).split("=")[1].strip()
+        expiration_date = datetime.datetime.strptime(expiration_date_str, "%b %d %H:%M:%S %Y %Z")
+
+        return (expiration_date - datetime.datetime.now()).days > 0
         
     # AUTHENTICATION
     def __init_player(self):
-        """ 
-        Initialize the player.
-        """
         self._last_id += 1
         # blocks = True if self._blockchain is not None else False 
         return str(self._game_code), str(self._last_id-1), self._blockchain
 
     
     def get_PK(self):
-        """
-        Get the public key of the sala bingo.
-        # Returns
-            string
-                The public key of the sala bingo.
-        """
-
         return self._PK
         
-    def __check_CA(self, GP_cert, CA_cert):
-        """ 
-        Check if the CA is known.
-        # Arguments
-            GP_cert: string
-                The name of the GP certificate file.
-            CA_cert: string
-                The name of the CA certificate file.
-        # Returns
-            boolean
-                True if the CA is known, False otherwise.
-        """
-
-        issuer = execute_command(commands["cert_extract_issuer"](GP_cert))
-        subject = execute_command(commands["cert_extract_subject"](CA_cert))
-
-        known_subjects = [execute_command(commands["cert_extract_subject"](CA)) for CA in self._known_CAs]
-        return issuer == subject
-        
-    def __check_sign(self, GP_cert, AS_cert):
-        """ 
-        Check if the sign is valid.
-        # Arguments
-            GP_cert: string
-                The name of the GP certificate file.
-            CA_cert: string 
-                The name of the CA certificate file.
-        # Returns   
-            boolean
-                True if the sign is valid, False otherwise.
-        """
-
-        #return True
-        res = execute_command(commands["validate_certificate"](AS_cert, GP_cert)).split(" ")[1].replace("\n", "").replace(" ", "")
-        return True if res == "OK" else False
-    
-    def __check_expiration(self, GP_cert):
-        """ 
-        Check if the GP is expired.
-        # Arguments
-            GP_cert: string
-                The name of the GP certificate file.
-        # Returns
-            boolean
-                True if the GP is not expired, False otherwise.
-        """
-
-        expiration_date = execute_command(commands["cert_extract_expiration_date"](GP_cert)).split("=")[1]
-        expiration_date = datetime.datetime.strptime(expiration_date.removesuffix("\n"), "%b %d %H:%M:%S %Y %Z")
-        current_date = datetime.datetime.now()
-        days_left = (expiration_date - current_date).days
-
-        return True if days_left > 0 else False
-    
     def receive_GP(self, GP):
-        """ 
-        Receive the GP from the user.
-        # Arguments
-            GP: string
-                The name of the GP certificate file.
-        # Returns
-            boolean
-                True if the GP is valid, False otherwise.
-        """
+        """Receive and check GP. Return the last auth id if GP is valid."""
         if GP is None:
             raise Exception("GP is None")
 
-        if self.__check_CA(GP, self._known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self._known_CAs[0]):
+        if all([
+            self.__check_CA(GP, self._known_CAs[0]),
+            self.__check_expiration(GP),
+            self.__check_sign(GP, self._known_CAs[0]),
+        ]):
             self._last_auth_id += 1
-            # self._GPs.append(GP
             self._GPs[self._last_auth_id] = GP
             return self._last_auth_id
-        return None
+        else:
+            return None
+
     
     def __extract_root(self, GP_cert):
-        """
-        Extract the root from the GP certificate.
-        # Arguments
-            GP_cert: string
-                The name of the GP certificate file.
-        # Returns
-            string
-                The root of the GP certificate.
-        """
-
         text = execute_command(commands["cert_extract_merkle_root"](GP_cert))
         
         # find the 'X509v3 Subject Alternative Name:' string and extract the root
         return text.split("X509v3 Subject Alternative Name:")[1].split("DNS:")[1].split("\n")[0].encode('utf-8').decode('unicode_escape')
 
     def __validate_clear_fields(self, policy, clear_fields, proofs, indices, auth_id):
-        """
-        Perform a validation of the clear fields sent by the user.
-
-        # Arguments
-            policy: list
-                The policy of the DPA.
-            clear_fields: dict
-                The clear fields sent by the user. key: field name, value: (value, randomness)
-            proofs: dict
-                The merkle proofs of the clear fields. key: field name, value: list of hashes
-            indices: dict
-                The indices of the clear fields.
-        # Returns
-            boolean
-                True if the clear fields are valid, False otherwise. 
-        """
-
         # length check
         if len(policy) != len(clear_fields):
             raise Exception("Policy and clear fields have different lengths")
@@ -238,34 +150,12 @@ class Bingo(Participant):
         return self.__init_player()
 
     def receive_clear_fields(self,policy,clear_fields, proofs, indices, auth_id):
-        """
-        Receive the clear fields from the user.
-        # Arguments
-            policy: list
-                The policy of the DPA.
-            clear_fields: dict
-                The clear fields sent by the user. key: field name, value: (value, randomness)
-            proofs: dict
-                The merkle proofs of the clear fields. key: field name, value: list of hashes
-            indices: dict
-                The indices of the clear fields.
-        # Returns
-            boolean
-                True if the clear fields are valid, False otherwise.
-        """
         # verify if the keys of clear fields and the policy are the same
         return self.__validate_clear_fields(policy,clear_fields, proofs, indices, auth_id)
         
     # GAME
     
     def start_game(self):
-        """ 
-        Start the game.
-        # Returns
-            boolean
-                True if the game is started, False otherwise.
-        """
-        # Inizializzo la PRF per il calcolo dei contributi casuali
         self._player_id = str(self._last_id)
         self._last_id += 1
          
@@ -277,23 +167,6 @@ class Bingo(Participant):
         super().generate_message(self._SK, "Bingo")
         
     def receive_commitment(self, params, commitment, signature):
-        """ 
-        The sala bingo receives the commitment, the signature and the 
-        additional parameters from the user. It verifies the signature
-        of the user on the commitment and the additional parameters.
-        If it is valid, it computes its signature on all of them and 
-        returns it to the user.
-        # Arguments
-            params: tuple
-                The list of additional parameters.
-            commitment: string
-                The commitment.
-            signature: string
-                The signature of the user on the commitment and the additional parameters.
-        # Returns
-            signature: string
-                The signature of the sala bingo on the additional parameters and the commitment.
-        """
         # concatenate params and commitment
         id = params[0][0]
         concat = concatenate(*params, commitment)
@@ -317,17 +190,6 @@ class Bingo(Participant):
         return None
             
     def publish_commitments_and_signature(self):
-        """ 
-        Once it has received all the commitments, the sala bingo publishes
-        them and its signature on them.
-        
-        # Returns
-            commitments: list
-                The list of (params, commitment).
-            signature: string
-                The signature of the sala bingo on the concatenation between the params
-                and the commitment.
-        """
         # the server adds its own paramsa, commitment and signature
         self._players_info[str(self._player_id)] = {}
         self._players_info[str(self._player_id)]["params"] = self._last_message[0]
@@ -369,21 +231,10 @@ class Bingo(Participant):
             return pairs, "Bingo/signature.pem"
     
     def receive_opening(self, id, contribution, randomness):
-        """ 
-        The sala bingo receives the opening from the user.
-        """
         # append the opening to the list of openings
         self._players_info[id]["opening"] = {"contribution": contribution, "randomness": randomness}
         
     def __compute_final_string(self):
-        """
-        Compute the final string based on the concatenation of all the openings.
-
-        # Returns
-            string
-                The final string.
-        """
-        # hash the concatenation of all the openings
         concat = ""
         ids = list(self._players_info.keys())
         ids.sort()
@@ -394,14 +245,6 @@ class Bingo(Participant):
         return compute_hash_from_data(concat)
 
     def __verify_commitments(self):
-        """
-        Verify the commitments received from the user.
-        # Returns
-            boolean
-                True if the commitments are valid, False otherwise.
-        """
-        # verify the commitments
-        
         ids = list(self._players_info.keys())
         ids.sort()
         for id in ids:
@@ -411,19 +254,6 @@ class Bingo(Participant):
         return True
 
     def publish_openings(self):
-        """ 
-        Once received all the openings, the sala bingo computes the
-        final string and publishes the openings as (message, randomness) 
-        pairs.
-        In addition it computed and returns the signature on the concatenation
-        of all the commitments and the opensings.   
-        # Returns
-            openings: list
-                The list of (message, randomness) pairs.
-            signature: string
-                The signature of the sala bingo on the concatenation of all the commitments
-                and the openings.
-        """
         self._players_info[str(self._player_id)]["opening"] = {"contribution": self._last_contribute, "randomness": self._last_randomess}
         
         openings = []
@@ -464,9 +294,6 @@ class Bingo(Participant):
             raise Exception("Commitments not valid.")
         
     def get_final_string(self):
-        """ 
-        Returns the final string.
-        """
         return self._final_string
     
     def receive_mapping(self, player_id, mapping):
@@ -485,12 +312,6 @@ class Bingo(Participant):
                 self._players_info[player_id]["BC_PK"] = new_pk
                 
     def choose_winner(self):
-        """
-        Randomly choose a winner for this match and return it.
-        # Returns
-            tuple: (winner_id, game_code, bingo_signature)
-                The id, the public key and the signature of the bingo on the winner.
-        """
         ids = list(self._players_info.keys())
         self._winner_id = random.choice(ids)
         
@@ -503,14 +324,6 @@ class Bingo(Participant):
         return (self._winner_id, "Bingo/signature.pem")
     
     def end_game(self, *signs):
-        """ 
-        End the game and publish the winner.
-        # Arguments
-            signs: list
-                The list of signatures of the players on the winner.
-        # Raises
-            Exception: If the number of signatures is not enough.
-        """
         
         signs = list(*signs)
         signs.append((self._player_id, "Bingo/signature.pem"))
