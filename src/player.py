@@ -207,7 +207,7 @@ class Player(User):
         
         # Set the 
         self._round += 1 # Go to next round
-        params = (self._player_id, self._game_code, str(self._round), str(datetime.datetime.now()))
+        params = (self._player_id, self._game_code, str(self._round), str(datetime.now()))
 
         # Compute commitment for a certain round
         comm = self.__compute_commitment()
