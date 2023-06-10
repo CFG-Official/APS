@@ -8,6 +8,8 @@ from utils.certificates_util import extract_public_key
 from merkle import verify_proof
 from utils.keys_util import verify_ECDSA, gen_ECDSA_keys, sign_ECDSA, concatenate
 from utils.hash_util import compute_hash_from_data
+from blockchain import Blockchain
+import random
 
 class Bingo:
     
@@ -15,7 +17,7 @@ class Bingo:
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_contr_comm','_contr_open', '_final_string', '_blockchain']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_contr_comm','_contr_open', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code']
     
     def __init__(self):
         self._blockchain = None
@@ -25,10 +27,13 @@ class Bingo:
         self._GPs = []
         self._contr_comm = []
         self._contr_open = []
+        self._players_info = {}
         self._final_string = None
         gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
         self._SK = "Bingo/private_key.pem"
         self._PK = "Bingo/public_key.pem"
+        self._last_id = 0
+        self._game_code = random.randint(0,1000000)
         
     # BLOCKCHAIN VERSION
     def get_blockchain(self):
@@ -42,16 +47,33 @@ class Bingo:
             raise Exception("Blockchain is None")
         return self._blockchain
     
-    def set_blockchain(self, blockchain):
+    def set_blockchain(self):
         """
         Set the blockchain.
         # Arguments
             blockchain: Blockchain
                 The blockchain.
         """
-        self._blockchain = blockchain
+        if self._blockchain is not None:
+            raise Exception("Blockchain is already present")
+        self._blockchain = Blockchain(self._PK,self._SK)
+        
+    def add_pre_game_block(self):
+        """ 
+        Add the pre-game block to the blockchain.
+        """
+        if len(self._players_info) == 0:
+            raise Exception("No players info")
+        self._blockchain.add_block('pre_game', self._players_info)
         
     # AUTHENTICATION
+    def __init_player(self):
+        """ 
+        Initialize the player.
+        """
+        self._last_id += 1
+        return str(self._game_code), str(self._last_id-1)
+    
     def get_PK(self):
         """
         Get the public key of the sala bingo.
@@ -169,12 +191,12 @@ class Bingo:
 
         # length check
         if len(policy) != len(clear_fields):
-            return False
+            raise Exception("Policy and clear fields have different lengths")
         
         # key check
         for item in policy:
             if item not in clear_fields.keys():
-                return False
+                raise Exception("Policy and clear fields have different keys")
             
         root = self.__extract_root(self._GPs[0])
             
@@ -188,9 +210,10 @@ class Bingo:
             res = verify_proof(root, value, leaves[key], indices[key])
             ### AGGIUNGERE VALIDAZIONE VALORE DEI CAMPI ###
             if not res:
-                return False
+                raise Exception("Invalid proof")
             
-        return True
+        self._players_info[str(self._last_id)] = {}
+        return self.__init_player()
 
     def receive_clear_fields(self,policy,clear_fields, proofs, indices):
         """
