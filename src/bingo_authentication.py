@@ -4,18 +4,13 @@ from bingo import Bingo
 from DPA import DPA
 from AS import AS
 
-from AS_authentication import authentication
+import AS_authentication as AS_util
 
-if __name__ == "__main__":
-    # authentication with the AS to get the GP
-    alice = Player(["Alice", "IT", "F", "Rome", "1990-01-01", "CF"])
-    authority = AS()
-    authentication(alice, authority)
-    # the user now owns a GP and wants to authenticate to the sala bingo
-    bingo = Bingo()
-    alice.set_PK_bingo(bingo.get_PK())
+def authentication(user, bingo):
+    print("-- ESTABILISHED TLS CONNECTION --")
+    user.set_PK_bingo(bingo.get_PK())
     # the user sends the GP to the sala bingo
-    if bingo.receive_GP(alice.send_GP()): 
+    if bingo.receive_GP(user.send_GP()): 
         # sala bingo checks if the CA exists and is trusted, the sign is valid and the GP is valid
         print("- Valid GP! Starting authentication...")
     else:
@@ -25,13 +20,21 @@ if __name__ == "__main__":
     dpa = DPA()
     policy = dpa.choose_policy()
     # validate GP fields according to the daily policy
-    clear_fields, merkle_proofs, indices = alice.send_clear_fields(policy)
+    clear_fields, merkle_proofs, indices = user.send_clear_fields(policy)
     if bingo.receive_clear_fields(policy, clear_fields, merkle_proofs, indices):
-        print("- Valid GP fields!", alice.get_name(), "can play!")
+        print("- Valid GP fields!", user.get_name(), "can play!")
     else:
         print("- Invalid GP fields! Terminating...")
         sys.exit()
-    # TEST CRISTIAN
+
+if __name__ == "__main__":
+    # authentication with the AS to get the GP
+    alice = Player(["Alice", "IT", "F", "Rome", "1990-01-01", "CF"])
+    authority = AS()
+    AS_util.authentication(alice, authority)
+    # the user now owns a GP and wants to authenticate to the sala bingo
+    bingo = Bingo()
+    authentication(alice,bingo)
     print("Game starting...")
     alice.start_game("0","0")
     # player sends the parameters, commitment and signature to the bingo and 
