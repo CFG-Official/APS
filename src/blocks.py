@@ -21,7 +21,7 @@ class AbstractBlock(ABC):
         self._public_key_file = public_key_file
         self._previous_hash = previous_hash
         self._timestamp = datetime.today()
-        self._data = self._check_data(data)
+        self._data = data
         self._hash = self.__compute_hash()
         self._signature_string = self.__compute_signature(private_key_file)
         
@@ -63,14 +63,9 @@ class AbstractBlock(ABC):
 
     
     @abstractmethod
-    def _check_data(self, data: dict):
-        """ Method to check whether the data for that specific block is well placed.
-            Returns the data itself if it is well placed, otherwise throws an exception."""
-        pass
-    
-    @abstractmethod
     def _verify_block(self):
         pass
+    
     
     def _header_string(self):
 
@@ -103,6 +98,7 @@ class AbstractBlock(ABC):
     def __compute_hash(self):
         return compute_hash_from_data(self._body_string())
 
+    
     def __compute_signature(self, private_key):
         signature_path = f'{self._blockchain_directory_path}/signatures/{self._block_number}.pem'
         sign_ECDSA_from_variable(private_key,self._hash, signature_path)
@@ -126,15 +122,6 @@ class PreGameBlock(AbstractBlock):
         return output
     
     
-    def _check_data(self, data):
-        for user_id, user_pk_temp in data.items():
-            if not isinstance(user_pk_temp, str):
-                raise TypeError(f'User {user_id} public key is not a string')
-            if not isinstance(user_id, str):
-                raise TypeError(f'User {user_id} ID is not a string')
-        return data
-    
-
     def _data_string(self):
         output = self._internal_block_data_header
         for user_id, user_pk_temp in self._data.items():
@@ -156,21 +143,17 @@ class CommitBlock(AbstractBlock):
         output = '\n\n---------------START COMMIT BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
-        output += f'Signature: {self._signature}\n'
+        output += f'Signature: {self._signature_string}\n'
         output += '---------------END COMMIT BLOCK---------------\n\n'
         return output
     
-    def _check_data(self, data):
-        """Commitment,parametro, path_firma"""
-        for user_id, user_commit in data.items():
-            if not isinstance(user_commit, tuple) or len(user_commit) != 3:
-                raise TypeError(f'User {user_id} commit is not a Tuple of 3 elements')            
-            if not isinstance(user_id, str):
-                raise TypeError(f'User {user_id} ID is not a string')
-            return data
     
     def _data_string(self):
-        pass
+        output = self._internal_block_data_header
+        for user_id, user_commit in self._data.items():
+            output += f'(User: {user_id} - [Commitment: {user_commit[0]} - Parameter: {user_commit[1]} - Player Signature: {user_commit[2]}])\n'
+        output += self._internal_block_data_footer
+        return output
     
     def _verify_block(self):
         pass
@@ -184,15 +167,16 @@ class RevealBlock(AbstractBlock):
         output = '\n\n---------------START REVEAL BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
-        output += f'Signature: {self._signature}\n'
+        output += f'Signature: {self._signature_string}\n'
         output += '---------------END REVEAL BLOCK---------------\n\n'
         return output
     
-    def _check_data(self, data):
-        pass
-    
     def _data_string(self):
-        pass
+        output = self._internal_block_data_header
+        for user_id, user_reveal in self._data.items():
+            output += f'(User: {user_id} - [Reveal: {user_reveal[0]} - Randomness: {user_reveal[1]}])\n'
+        output += self._internal_block_data_footer
+        return output
     
     def _verify_block(self):
         pass
@@ -207,13 +191,10 @@ class PostGameBlock(AbstractBlock):
         output = '\n\n---------------START POST GAME BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
-        output += f'Signature: {self._signature}\n'
+        output += f'Signature: {self._signature_string}\n'
         output += '---------------END POST GAME BLOCK---------------'
         return output
-    
-    def _check_data(self, data):
-        pass
-    
+        
     def _data_string(self):
         pass
     

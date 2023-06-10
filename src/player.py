@@ -25,6 +25,7 @@ class Player(User):
         self._game_code = None
         self._player_id = None
         self._round = 0
+        self._auth_id = None
         self._last_message = None
         self._seed = None
         self._IV = None
@@ -58,6 +59,27 @@ class Player(User):
             raise Exception("Bingo PK not set.")
         
         self._bingo_PK = bingo_PK
+
+    def set_auth_id(self, auth_id):
+        """ 
+        Set the authentication id.
+        # Arguments
+            auth_id: string
+                The authentication id.
+        """
+        if auth_id is None:
+            raise Exception("Authentication id not set.")
+        
+        self._auth_id = auth_id
+
+    def get_auth_id(self):
+        """ 
+        Get the authentication id.
+        # Returns
+            auth_id: string
+                The authentication id.
+        """
+        return self._auth_id
     
     def __compute_proofs(self, policy):
         """
