@@ -146,7 +146,7 @@ class CommitBlock(AbstractBlock):
         output = '\n\n---------------START COMMIT BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
-        output += f'Signature: {self._signature}\n'
+        output += f'Signature: {self._signature_string}\n'
         output += '---------------END COMMIT BLOCK---------------\n\n'
         return output
     
@@ -174,7 +174,7 @@ class RevealBlock(AbstractBlock):
         output = '\n\n---------------START REVEAL BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
-        output += f'Signature: {self._signature}\n'
+        output += f'Signature: {self._signature_string}\n'
         output += '---------------END REVEAL BLOCK---------------\n\n'
         return output
     
@@ -197,7 +197,7 @@ class PostGameBlock(AbstractBlock):
         output = '\n\n---------------START POST GAME BLOCK---------------\n'
         output += self._body_string()
         output += f'HashBlock: {self._hash}\n'
-        output += f'Signature: {self._signature}\n'
+        output += f'Signature: {self._signature_string}\n'
         output += '---------------END POST GAME BLOCK---------------'
         return output
     
