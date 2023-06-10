@@ -29,7 +29,7 @@ class Blockchain:
         self.__last_block = None
 
     
-    def add_block(self, block_type: str, data: list):
+    def add_block(self, block_type: str, data: dict):
         block_count = len(self.__block_list)
         print("Last block: ", type(self.__last_block))
         if block_type not in ['pre_game', 'commit', 'reveal', 'end_game']:
@@ -38,21 +38,37 @@ class Blockchain:
         if block_type == 'pre_game':
             if block_count > 0:
                 raise ValueError('Pre-game block must be the first block!')
+            
+            for user_id, user_pk_temp in data.items():
+                data[user_id] = self.__check_entry_pre_game(user_id, user_pk_temp)
+            
             self.__last_block = PreGameBlock(self.__blockchain_directory_path, self.__server_public_key_file,self.__server_private_key_file, data)
             
         elif block_type == 'commit':
             if block_count <= 0:
                 raise ValueError('Commit block must be at least the second block!')
+            
+            for user_id, user_commit in data.items():
+                self.__check_entry_commit(user_id, user_commit)
+            
             self.__last_block = CommitBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
         
         elif block_type == 'reveal':
             if block_count <= 1:
                 raise ValueError('Reveal block must be at least the third block!')
+            
+            for user_id, user_reveal in data.items():
+                self.__check_entry_reveal(user_id, user_reveal)
+            
             self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
         
         elif block_type == 'end_game':
             if block_count <= 2:
                 raise ValueError('End game block must be at least the fourth block!')
+            
+            for user_id, user_signature in data.items():
+                self.__check_entry_end_game(user_id, user_signature)
+
             self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,data)
         
         
@@ -86,3 +102,41 @@ class Blockchain:
         with open(file_path, 'a') as f:
             f.write(text)
 
+    @final
+    @staticmethod
+    def __check_user_id(user_id):
+        if not isinstance(user_id, str):
+            raise TypeError(f'User {user_id} ID is not a string')
+
+    
+    @final  
+    def __check_entry_pre_game(self,user_id: str, user_pk: str):
+        Blockchain.__check_user_id(user_id)
+        if not isinstance(user_pk, str):
+            raise TypeError(f'User {user_id} has a public key file that is not a string')
+        user_pk_file_path = os.path.join(self.__blockchain_keys_directory_path, f'{user_id}_public_key.pem')
+        os.system(f"cp {user_pk} {user_pk_file_path}")
+        return user_pk_file_path
+
+
+    @final
+    def __check_entry_commit(self, user_id: str, user_commit: tuple):
+        Blockchain.__check_user_id(user_id)
+        if not isinstance(user_commit, tuple) or len(user_commit) != 3:
+            raise TypeError(f'User {user_id} commit is not a Tuple of 3 elements')
+        return user_commit
+        
+
+    @final
+    def __check_entry_reveal(self, user_id: str, user_reveal: tuple):
+        Blockchain.__check_user_id(user_id)
+        if not isinstance(user_reveal, tuple) or len(user_reveal) != 2:
+            raise TypeError(f'User {user_id} reveal is not a Tuple of 2 elements')
+        return user_reveal
+    
+    @final
+    def __check_entry_end_game(self, user_id: str, user_signature: str):
+        Blockchain.__check_user_id(user_id)
+        if not isinstance(user_signature, str):
+            raise TypeError(f'User {user_id} signature is not a string')
+        return user_signature
