@@ -31,7 +31,7 @@ class Blockchain:
         self.__last_block = None
 
     
-    def add_block(self, block_type: str, data: dict):
+    def add_block(self, block_type: str, data: dict, on_chain: bool = False):
         block_count = len(self.__block_list)
         if block_type not in ['pre_game', 'commit', 'reveal', 'dispute', 'end_game']:
             raise TypeError('Invalid block type!')
@@ -52,7 +52,7 @@ class Blockchain:
             for user_id, user_commit in data.items():
                 self.__check_entry_commit(user_id, user_commit)
             
-            self.__last_block = CommitBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = CommitBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data, on_chain)
         
         elif block_type == 'reveal':
             if block_count <= 1:
@@ -61,7 +61,7 @@ class Blockchain:
             for user_id, user_reveal in data.items():
                 self.__check_entry_reveal(user_id, user_reveal)
             
-            self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data, on_chain)
         
         
         elif block_type == 'dispute':
@@ -71,7 +71,7 @@ class Blockchain:
             for user_id, user_dispute in data.items():
                 self.__check_entry_dispute(user_id, user_dispute)
             
-            self.__last_block = DisputeBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = DisputeBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,data, on_chain)
         
         
         
@@ -82,7 +82,7 @@ class Blockchain:
             for user_id, user_signature in data.items():
                 self.__check_entry_end_game(user_id, user_signature)
 
-            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,data)
+            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,data, on_chain)
         
         
         self.append_last_block_to_file()

@@ -6,25 +6,26 @@ from utils.keys_util import sign_ECDSA_from_variable, verify_ECDSA, sign_ECDSA
 from utils.keys_util import base64_key_view
 import binascii
 from typing import final
-import os
 
 class AbstractBlock(ABC):
-    __slots__ = ['_blockchain_directory_path','_block_number', '_public_key_file' ,'_hash', '_previous_hash', '_timestamp', '_data', '_signature_string', '_signature_file']
+    __slots__ = ['_blockchain_directory_path','_block_number', '_public_key_file' ,'_hash', '_previous_hash', '_timestamp', '_data', '_signature_string', '_signature_file', '_on_chain']
 
     _internal_block_header = "----------START HEADER BLOCK----------\n"
     _internal_block_footer = "----------END HEADER BLOCK----------\n"
     _internal_block_data_header = "----------START DATA BLOCK----------\n"
     _internal_block_data_footer = "----------END DATA BLOCK----------\n"
 
-    def __init__(self, blockchain_directory_path:str ,block_number: int, public_key_file: str, private_key_file: str, previous_hash: str, data: dict):
+    def __init__(self, blockchain_directory_path:str ,block_number: int, public_key_file: str, private_key_file: str, previous_hash: str, data: dict, on_chain: bool = False):
         self._blockchain_directory_path = blockchain_directory_path
         self._block_number = block_number
         self._public_key_file = public_key_file
         self._previous_hash = previous_hash
+        self._on_chain = on_chain
         self._timestamp = datetime.today()
         self._data = data
         self._hash = self.__compute_hash()
         self._signature_string = self.__compute_signature(private_key_file)
+        
         
 
     def get_public_key_file(self):
@@ -74,6 +75,8 @@ class AbstractBlock(ABC):
         public_key = base64_key_view(self._public_key_file)
 
         output = self._internal_block_header
+        output += f'Block Number: {self._block_number}\n'
+        output += f'On Chain: {self._on_chain}\n'
         output += 'Public Key: ' + public_key + '\n'
         output += f'Timestamp: {self._timestamp}\n'
         output += f'PreviousHash: {self._previous_hash}\n'
@@ -114,7 +117,7 @@ class PreGameBlock(AbstractBlock):
 
     def __init__(self, blockchain_directory_path, public_key_file, private_key_file, data):
         previous_hash = rand_extract(32, 'hex')
-        super().__init__(blockchain_directory_path, 0, public_key_file, private_key_file ,previous_hash, data)
+        super().__init__(blockchain_directory_path, 0, public_key_file, private_key_file ,previous_hash, data, True)
 
     def __str__(self):
         output = '---------------START PRE GAME BLOCK---------------\n'
@@ -139,8 +142,8 @@ class PreGameBlock(AbstractBlock):
 
 class CommitBlock(AbstractBlock):
 
-    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
-        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data)
+    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain: bool = False):
+        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain)
 
     def __str__(self):
         output = '\n\n---------------START COMMIT BLOCK---------------\n'
@@ -163,8 +166,8 @@ class CommitBlock(AbstractBlock):
     
 class RevealBlock(AbstractBlock):
 
-    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
-        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data)
+    def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain: bool = False):
+        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, on_chain)
 
     def __str__(self):
         output = '\n\n---------------START REVEAL BLOCK---------------\n'
@@ -188,7 +191,7 @@ class RevealBlock(AbstractBlock):
 class PostGameBlock(AbstractBlock):
     
     def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
-        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data)
+        super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, True)
     
     def __str__(self):
         output = '\n\n---------------START POST GAME BLOCK---------------\n'
@@ -207,7 +210,7 @@ class PostGameBlock(AbstractBlock):
 class DisputeBlock(AbstractBlock):
         
         def __init__(self, blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data):
-            super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data)
+            super().__init__(blockchain_directory_path, block_number, public_key_file, private_key_file, previous_hash, data, True)
         
         def __str__(self):
             output = '\n\n---------------START DISPUTE BLOCK---------------\n'
