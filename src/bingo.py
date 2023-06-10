@@ -17,7 +17,7 @@ class Bingo:
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code', '_last_auth_id']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_game_code', '_last_auth_id','_current_commitment_block','_current_opening_block']
     
     def __init__(self):
         self._blockchain = None
@@ -33,6 +33,8 @@ class Bingo:
         self._last_id = 0
         self._last_auth_id = 0
         self._game_code = random.randint(0,1000000)
+        self._current_commitment_block = None
+        self._current_opening_block = None
         
     # BLOCKCHAIN VERSION
     def get_blockchain(self):
@@ -326,7 +328,11 @@ class Bingo:
             data = {}
             for id in self._players_info.keys():
                 data[id] = (self._players_info[id]["params"], self._players_info[id]["commitment"], self._players_info[id]["signature"])
-            return self._blockchain.add_block('commit', data), ""
+            if self._current_opening_block is not None:
+                self._current_opening_block = None
+            if self._current_commitment_block is None:
+                self._current_commitment_block = self._blockchain.add_block('commit', data)
+            return self._current_commitment_block, ""
         else:
             return pairs, "Bingo/signature.pem"
     
@@ -413,7 +419,11 @@ class Bingo:
                 data = {}
                 for id in self._players_info.keys():
                     data[id] = (self._players_info[id]["opening"]["contribution"], self._players_info[id]["opening"]["randomness"])
-                return self._blockchain.add_block('reveal', data) , ""
+                if self._current_commitment_block is not None:
+                    self._current_commitment_block = None
+                if self._current_opening_block is None:
+                    self._current_opening_block = self._blockchain.add_block('reveal', data)
+                return self._current_opening_block , ""
             else:
                 return openings, "Bingo/signature.pem"
         else:
