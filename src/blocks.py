@@ -14,7 +14,7 @@ class AbstractBlock(ABC):
     _internal_block_header = "----------START HEADER BLOCK----------\n"
     _internal_block_footer = "----------END HEADER BLOCK----------\n"
     _internal_block_data_header = "----------START DATA BLOCK----------\n"
-    _internal_block_data_footer = "\n----------END DATA BLOCK----------\n"
+    _internal_block_data_footer = "----------END DATA BLOCK----------\n"
 
     def __init__(self, blockchain_directory_path:str ,block_number: int, public_key_file: str, private_key_file: str, previous_hash: str, data: dict):
         self._blockchain_directory_path = blockchain_directory_path
@@ -154,7 +154,7 @@ class CommitBlock(AbstractBlock):
     def _data_string(self):
         output = self._internal_block_data_header
         for user_id, user_commit in self._data.items():
-            output += f'(User: {user_id} - [Parameter: {user_commit[0]} - Commitment: {user_commit[1]} - Player Signature: {user_commit[2]}])\n'
+            output += f'(User: {user_id} - [Parameter: {user_commit[0]} - Commitment: {user_commit[1]} - Player Signature: {AbstractBlock.binary_to_hex(user_commit[2])}])\n'
         output += self._internal_block_data_footer
         return output
     
