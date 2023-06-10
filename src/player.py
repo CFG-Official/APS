@@ -388,3 +388,14 @@ class Player(User, Participant):
         self._blockchain.set_credentials(self._PK_BC, self._SK_BC)
         self._blockchain.add_block("dispute", {self._player_id: self._last_contribute})
         self._blockchain.reset_server_credentials()
+        
+    def get_winner(self, winner_info):
+        
+        # winner_info = (winner_id, bingo_signature)
+        concat = winner_info[0] + self._game_code
+
+        with open(self._user_name + "/"+ self._user_name +"_temp_winner.txt", "w") as f:
+            f.write(concat)
+        if verify_ECDSA(self._bingo_PK, self._user_name + "/"+ self._user_name +"_temp_winner.txt", winner_info[1]):
+            sign_ECDSA(self._SK_BC,self._user_name + "/"+ self._user_name +"_temp_winner.txt", self._user_name + "/"+ self._user_name +"_temp_winner_sign.txt")
+            return (self._player_id, self._user_name + "/"+ self._user_name +"_temp_winner_sign.txt")

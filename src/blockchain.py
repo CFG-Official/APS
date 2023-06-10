@@ -82,7 +82,7 @@ class Blockchain:
             for user_id, user_signature in data.items():
                 self.__check_entry_end_game(user_id, user_signature)
 
-            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
+            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,game_code, data)
         
         
         self.append_last_block_to_file()
@@ -148,11 +148,11 @@ class Blockchain:
         return user_reveal
     
     @final
-    def __check_entry_end_game(self, user_id: str, user_signature: str):
+    def __check_entry_end_game(self, user_id: str, user_endgame: tuple):
         Blockchain.__check_user_id(user_id)
-        if not isinstance(user_signature, str):
-            raise TypeError(f'User {user_id} signature is not a string')
-        return user_signature
+        if not isinstance(user_endgame, tuple) or len(user_endgame) != 3:
+            raise TypeError(f'User {user_id} data is not a Tuple of 3 elements')
+        return user_endgame
     
 
     @final

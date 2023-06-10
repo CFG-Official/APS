@@ -57,7 +57,15 @@ def main():
     bingo.add_pre_game_block()
 
     round.multi_play([alice,bob],bingo)
+    
+    winner = bingo.choose_winner()
+    
+    signs = []
+    signs.append(bob.get_winner(winner))
+    signs.append(alice.get_winner(winner))
 
+    bingo.end_game(signs)
+    
     bob.end_game()
     alice.end_game()
 

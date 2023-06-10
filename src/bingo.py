@@ -19,7 +19,7 @@ class Bingo(Participant):
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_last_auth_id','_current_commitment_block','_current_opening_block']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_last_auth_id','_current_commitment_block','_current_opening_block', '_winner_id']
     
     def __init__(self):
         Participant.__init__(self)
@@ -37,6 +37,8 @@ class Bingo(Participant):
         self._last_auth_id = 0
         self._current_commitment_block = None
         self._current_opening_block = None
+        self._winner_id = None
+        self._game_code = str(random.randint(0,1000000))
         
     # BLOCKCHAIN VERSION
     def get_blockchain(self):
@@ -266,8 +268,7 @@ class Bingo(Participant):
         # Inizializzo la PRF per il calcolo dei contributi casuali
         self._player_id = str(self._last_id)
         self._last_id += 1
-        
-        self._game_code = str(random.randint(0,1000000))
+         
         self._round = 0
         
         self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
@@ -483,3 +484,52 @@ class Bingo(Participant):
             if verify_ECDSA(new_pk, "Bingo/concat.txt", mapping[0][1]):
                 self._players_info[player_id]["BC_PK"] = new_pk
                 
+    def choose_winner(self):
+        """
+        Randomly choose a winner for this match and return it.
+        # Returns
+            tuple: (winner_id, game_code, bingo_signature)
+                The id, the public key and the signature of the bingo on the winner.
+        """
+        ids = list(self._players_info.keys())
+        self._winner_id = random.choice(ids)
+        
+        concat = self._winner_id + self._game_code
+        with open("Bingo/concat.txt", "w") as f:
+            f.write(concat)
+            
+        sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+
+        return (self._winner_id, "Bingo/signature.pem")
+    
+    def end_game(self, *signs):
+        """ 
+        End the game and publish the winner.
+        # Arguments
+            signs: list
+                The list of signatures of the players on the winner.
+        # Raises
+            Exception: If the number of signatures is not enough.
+        """
+        
+        signs = list(*signs)
+        signs.append((self._player_id, "Bingo/signature.pem"))
+
+        if len(signs) < len(self._players_info):
+            raise Exception("Not enough signatures")
+        
+        self._players_info[self._player_id]["BC_PK"] = self._PK
+        
+        sign_dict = {}
+        for sign in signs:
+            print(self._players_info[sign[0]]["BC_PK"])
+            if not verify_ECDSA(self._players_info[sign[0]]["BC_PK"],"Bingo/concat.txt", sign[1]):
+                raise Exception("Invalid signature")
+            sign_dict[sign[0]] = sign[1]
+        
+        data = {}
+        ids = list(self._players_info.keys())
+        for id in ids:
+            data[id] = (self._winner_id, self._game_code, sign_dict[id])
+        
+        self._blockchain.add_block('end_game', self._game_code, data)
