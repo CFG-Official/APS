@@ -206,9 +206,9 @@ class Bingo:
             # append the hashed value of the concatenation between the value and the randomness
             leaves[key] = hash_concat_data_and_known_rand(value[0],value[1])
             
+        # check for the proofs of the clear fields
         for key, value in proofs.items():
             res = verify_proof(root, value, leaves[key], indices[key])
-            ### AGGIUNGERE VALIDAZIONE VALORE DEI CAMPI ###
             if not res:
                 raise Exception("Invalid proof")
             
@@ -255,12 +255,6 @@ class Bingo:
                 The signature of the sala bingo on the additional parameters and the commitment.
         """
         # concatenate params and commitment
-
-        # concat = ""
-        # for param in params:
-        #     concat += param
-        # concat += commitment
-
         concat = concatenate(*params, commitment)
 
         # verify the signature of the user on the commitment and the additional parameters
