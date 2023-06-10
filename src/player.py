@@ -314,7 +314,7 @@ class Player(User):
             opening: string
                 The opening as (message, randomness) pair.
         """
-        return self._last_contribute, self._last_randomess
+        return self._player_id, self._last_contribute, self._last_randomess
 
     def __compute_final_string(self):
         """
