@@ -35,7 +35,7 @@ countryName = optional
 stateOrProvinceName = optional
 organizationName = optional
 organizationalUnitName = optional
-commonName = supplied
+commonName = optional
 emailAddress = optional
 
 [ v3_ca ]                                           # Root CA certificate extensions
