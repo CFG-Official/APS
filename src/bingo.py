@@ -370,3 +370,19 @@ class Bingo:
         Returns the final string.
         """
         return self._final_string
+    
+    def receive_mapping(self, player_id, mapping):
+        # Verify signature with the original PK of the player
+        extract_public_key(self._GPs[0], "Bingo/GP_PK.pem")
+        with open("Bingo/concat.txt", "w") as f:
+            f.write(concatenate(*mapping[0]))
+        
+        if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", mapping[1]):
+            # Verify that the mapping is valid, i.e. verify that signature
+            # of the player on the mapping is correctly computed
+            new_pk = mapping[0][0]
+            with open("Bingo/concat.txt", "w") as f:
+                f.write('')
+            if verify_ECDSA(new_pk, "Bingo/concat.txt", mapping[0][1]):
+                self._players_info[player_id]["BC_PK"] = new_pk
+                

@@ -389,19 +389,26 @@ class Player(User):
         """
 
         # Generate a new key pair using ECDSA
+        print("Generating new key pair for mapping...")
         base_filename = self._user_name+'/'+ 'BC_mapping_'
         self._SK_BC = base_filename + 'private_key.pem'
         self._PK_BC = base_filename + 'public_key.pem'
         gen_ECDSA_keys('prime256v1', base_filename + 'param.pem', self._SK_BC, self._PK_BC)
         
         # Fiat-Shamir 86 protocol with mapping key
+        print("Generating signature for mapping...")
         signature_bc = self._user_name+'/'+self._user_name+'_BC_mapping_sign.pem'
-        sign_ECDSA(self._SK_BC, '', signature_bc)
+        with open(self._user_name + "/void_file.txt", "w") as f:
+                f.write('')
+        sign_ECDSA(self._SK_BC, self._user_name + "/void_file.txt", signature_bc)
         temp = (self._PK_BC, signature_bc)
 
         # Shnorr signature with GP key
+        print("Generating signature for mapping...")
         signature_gp = self._user_name+'/'+self._user_name+'_GP_mapping_sign.pem'
-        sign_ECDSA(self._SK_GP, concatenate(*temp), signature_gp)
+        with open(self._user_name + "/_temp_sign_mapping.txt", "w") as f:
+                f.write(concatenate(*temp))
+        sign_ECDSA(self._SK_GP, self._user_name + "/_temp_sign_mapping.txt", signature_gp)
 
         return temp, signature_gp
 
