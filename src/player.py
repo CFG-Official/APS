@@ -10,6 +10,7 @@ from utils.commands_util import commands
 from utils.pseudorandom_util import hash_concat_data_and_known_rand, rand_extract
 from utils.hash_util import compute_hash_from_data
 from src.utils.keys_util import *
+from blocks import *
 
 class Player(User):
     
@@ -17,7 +18,7 @@ class Player(User):
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain']
+    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain', '_state']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
@@ -32,6 +33,7 @@ class Player(User):
         self._security_param = 32 # (in bytes) -> 256 bits
         self._contr_comm = []
         self._contr_open = []
+        self._state = []
         self._final_string = None
     
     # AUTHENTICATION
@@ -286,14 +288,13 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
+        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
         
         if not self._blockchain:
-            print(pairs, signature)
+
             if pairs is None or signature is None:
                 raise Exception("Commit pairs or signature are None.")
 
-            temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
-            
             self._contr_comm = pairs
 
             concat = ""
@@ -306,15 +307,31 @@ class Player(User):
                 f.write(concat)
 
             # Verify that the received signature is valid
-            if verify_ECDSA(self._bingo_PK, temp_filename, signature):
+            if not verify_ECDSA(self._bingo_PK, temp_filename, signature):
                 self._bingo_sign_on_comm = signature
-                return True
+                raise Exception("Bingo's signature on the commit pairs is not valid.")
             
-            return False
+            return True
         
         else:
-            # process block
-            pass
+            # PROCESS BLOCK
+            
+            # verify player's signature on its own pair
+            data = pairs.get_data()
+            if self._player_id not in data.keys():
+                raise Exception("Player's id not in the block.")
+            my_pair = data[self._player_id]
+            concat = concatenate(*my_pair[1], my_pair[0], my_pair[2])
+            with open(temp_filename, "w") as f:
+                f.write(concat)
+            if not verify_ECDSA(self._SK_GP, temp_filename, my_pair[3]):
+                raise Exception("Player's signature on its own pair is not valid.")
+            # verify bingo's signature on the block
+            if not pairs.verify_block(self._bingo_PK):
+                raise Exception("Bingo's signature on the block is not valid.")
+            # if all is ok, add the block to the player's state
+            self._state.append(pairs)
+            return True
     
     def send_opening(self):
         """ 
@@ -385,6 +402,15 @@ class Player(User):
         
         else:
             # process block
+            
+            # verify commitments openings 
+            
+            # verify bingo's signature on the block
+            
+            # if all is ok, add the block to the player's state
+            
+            # compute final string
+            
             pass
         
     def get_final_string(self):

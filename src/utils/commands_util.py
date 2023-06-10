@@ -37,7 +37,7 @@ commands = {
     "ECDSA_pub_key_gen": lambda priv_key_file, out_file: f'{openssl} pkey -in {priv_key_file} -pubout -out {out_file}',
     "ECDSA_pub_key_view": lambda in_file: f'{openssl} pkey -pubin -in {in_file} -text',
     "ECDSA_sign": lambda in_file, priv_key_file, signature: f'{openssl} dgst -sign {priv_key_file} -out {signature} {in_file}',
-        "ECDSA_sign_variable": lambda in_data, priv_key_file, signature_file: f'echo -n {in_data} | {openssl} dgst -sign {priv_key_file} -out {signature_file}',
+    "ECDSA_sign_variable": lambda in_data, priv_key_file, signature_file: f'echo -n {in_data} | {openssl} dgst -sign {priv_key_file} -out {signature_file}',
     "ECDSA_verify": lambda in_file, signature, pub_key_file: f'{openssl} dgst -verify {pub_key_file} -signature {signature} {in_file}',
     # Certificate Signing Requests
     "CSR_gen": lambda priv_key_file, out_file, config_file: f'{openssl} req -new -key {priv_key_file} -out {out_file} -config {config_file}',

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from utils.hash_util import compute_hash_from_data
 from utils.pseudorandom_util import rand_extract
-from utils.keys_util import sign_ECDSA_from_variable
+from utils.keys_util import sign_ECDSA_from_variable, verify_ECDSA
 from utils.keys_util import base64_key_view
 import binascii
 from typing import final
@@ -46,6 +46,16 @@ class AbstractBlock(ABC):
 
     def get_hash(self):
         return self._hash
+    
+    def verify_block(self, PK):
+        """ 
+        This method verifies the signature on the current block.
+        # Arguments
+            PK: the public key of the signer.
+        # Returns 
+            True if the signature is valid, False otherwise.
+        """
+        return verify_ECDSA(PK, self.get_data(), self.get_signature_file())
 
     @abstractmethod
     def __str__(self):
