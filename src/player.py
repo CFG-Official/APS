@@ -295,7 +295,7 @@ class Player(User):
         
         return False
     
-    def receive_commitments_and_signature(self, pairs, signature = None):
+    def receive_commitments_and_signature(self, pairs, signature = None, block = None):
         """
         The player receives the commitments, the parameters of other player
         and the signature of the sala bingo on them. 
@@ -340,17 +340,23 @@ class Player(User):
             
             # verify player's signature on its own pair
             data = pairs.get_data()
+            
             if self._player_id not in data.keys():
                 raise Exception("Player's id not in the block.")
+            
             my_pair = data[self._player_id]
-            concat = concatenate(*my_pair[1], my_pair[0], my_pair[2])
+            concat = concatenate(*my_pair[0], my_pair[1])
+            
             with open(temp_filename, "w") as f:
                 f.write(concat)
-            if not verify_ECDSA(self._SK_GP, temp_filename, my_pair[3]):
+                
+            if not verify_ECDSA(self._PK_GP, temp_filename, my_pair[2]):
                 raise Exception("Player's signature on its own pair is not valid.")
+            
             # verify bingo's signature on the block
             if not pairs.verify_block(self._bingo_PK):
                 raise Exception("Bingo's signature on the block is not valid.")
+            
             # if all is ok, add the block to the player's state
             self._state.append(pairs)
             return True
@@ -385,7 +391,8 @@ class Player(User):
         """
 
         for contr, opening in zip(self._contr_comm, self._contr_open):
-            if contr[1] != hash_concat_data_and_known_rand(opening[0], opening[1]):
+            res = hash_concat_data_and_known_rand(opening[0], opening[1])
+            if contr[1] != res:
                 return False
         return True
     
@@ -423,17 +430,36 @@ class Player(User):
                 raise Exception("Commitments not valid.")
         
         else:
-            # process block
-            
-            # verify commitments openings 
+            # PROCESS BLOCK
             
             # verify bingo's signature on the block
+            if not openings.verify_block(self._bingo_PK):
+                raise Exception("Bingo's signature on the block is not valid.")
+
+            ids = list(openings.get_data().keys())
+            ids.sort()
+            for id in ids:
+                self._contr_open.append(openings.get_data()[id])
+                
+            ids = list(self._state[-1].get_data().keys())
+            ids.sort()
+            for id in ids:
+                self._contr_comm.append(self._state[-1].get_data()[id])
             
-            # if all is ok, add the block to the player's state
+            # verify commitments openings 
+            if self.__verify_commitments():
+                            
+                # if all is ok, add the block to the player's state
+                self._state.append(openings)
             
-            # compute final string
+                # compute final string
+                self._final_string = self.__compute_final_string()
+                
+            else:
+                
+                raise Exception("Commitments not valid.")
             
-            pass
+            return True
         
     def get_final_string(self):
         """

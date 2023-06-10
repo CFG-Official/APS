@@ -79,7 +79,6 @@ class Bingo:
         Initialize the player.
         """
         self._last_id += 1
-        print("BLOCK FLAG ", self._blockchain)
         blocks = True if self._blockchain is not None else False 
         return str(self._game_code), str(self._last_id-1), blocks
 
@@ -326,8 +325,8 @@ class Bingo:
             # dict {player_id: (commitment, params, signature_path)}
             data = {}
             for id in self._players_info.keys():
-                data[id] = (self._players_info[id]["commitment"], self._players_info[id]["params"], self._players_info[id]["signature"])
-            return self._blockchain.add_block('commit', data)
+                data[id] = (self._players_info[id]["params"], self._players_info[id]["commitment"], self._players_info[id]["signature"])
+            return self._blockchain.add_block('commit', data), ""
         else:
             return pairs, "Bingo/signature.pem"
     
@@ -413,8 +412,8 @@ class Bingo:
                 # dict {player_id: (randomness, contribution)}
                 data = {}
                 for id in self._players_info.keys():
-                    data[id] = (self._players_info[id]["opening"]["randomness"], self._players_info[id]["opening"]["contribution"])
-                return self._blockchain.add_block('open', data)
+                    data[id] = (self._players_info[id]["opening"]["contribution"], self._players_info[id]["opening"]["randomness"])
+                return self._blockchain.add_block('reveal', data) , ""
             else:
                 return openings, "Bingo/signature.pem"
         else:

@@ -22,7 +22,7 @@ def main():
     # The user now owns a GP and wants to authenticate to the sala bingo
     print("---------- Bingo AUTHENTICATION ----------")
     bingo = Bingo()
-    # bingo.set_blockchain()
+    bingo.set_blockchain()
     alice.set_auth_id(bingo_util.authentication(alice,bingo))
     bob.set_auth_id(bingo_util.authentication(bob,bingo))
 
@@ -49,7 +49,7 @@ def main():
     bingo.receive_mapping(alice_id, alice.generate_mapping()) # Receive the mapping from the player
     bingo.receive_mapping(bob_id, bob.generate_mapping()) # Receive the mapping from the player
     
-    # bingo.add_pre_game_block()
+    bingo.add_pre_game_block()
     round.multi_play([alice, bob], bingo)
 
     bob.end_game()

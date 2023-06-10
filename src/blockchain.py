@@ -7,12 +7,14 @@ class Blockchain:
     __blockchain_directory_path = os.path.join(os.getcwd(), __blockchain_directory_name)
     __blockchain_keys_directory_path = os.path.join(__blockchain_directory_path, 'keys')
     __blockchain_signatures_directory_path = os.path.join(__blockchain_directory_path, 'signatures')
+    __blockchain_hash_directory_path = os.path.join(__blockchain_directory_path, 'hashes')
     __blockchain_blocks_file = os.path.join(__blockchain_directory_path, 'blocks.txt')
 
     __slots__ = ['__last_block', '__server_public_key_file', '__server_private_key_file','__actual_public_key_file', '__actual_private_key_file','__block_list']
     def __init__(self, server_public_key_file, server_private_key_file):
         os.system(f"rm -r {self.__blockchain_directory_path}")
         os.system(f"mkdir {self.__blockchain_directory_path}")
+        os.system(f"mkdir {self.__blockchain_hash_directory_path}")
         os.system(f"mkdir {self.__blockchain_keys_directory_path}")
         # Copy server keys to blockchain directory
         os.system(f"cp {server_public_key_file} {self.__blockchain_keys_directory_path}/server_public_key.pem")
