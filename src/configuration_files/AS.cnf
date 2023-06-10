@@ -37,3 +37,9 @@ organizationName = optional
 organizationalUnitName = optional
 commonName = supplied
 emailAddress = optional
+
+[ v3_ca ]                                           # Root CA certificate extensions
+subjectKeyIdentifier = hash                         # Subject key identifier
+authorityKeyIdentifier = keyid:always,issuer        # Authority key identifier
+basicConstraints = critical, CA:true                # Basic constraints for a CA
+keyUsage = critical, keyCertSign, cRLSign           # Key usage for a CA

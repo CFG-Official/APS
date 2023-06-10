@@ -16,13 +16,19 @@ class Player(User):
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['game_code', 'player_id', 'security_param', '_final_string', '_contr_comm', '_contr_open']
+    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
-        self.game_code = None
-        self.player_id = None
-        self.security_param = 16 # (in bytes) -> 128 bits
+        self._game_code = None
+        self._player_id = None
+        self._round = 0
+        self._last_message = None
+        self._seed = None
+        self._IV = None
+        self._last_contribute = None
+        self._last_randomess = None
+        self._security_param = 16 # (in bytes) -> 128 bits
         self._contr_comm = []
         self._contr_open = []
         self._final_string = None
@@ -36,7 +42,7 @@ class Player(User):
             GP_certificate: string
                 The name of the GP certificate file.
         """
-        return self.GP_certificate
+        return self._GP_certificate
 
     def set_PK_bingo(self, bingo_PK):
         """ 
@@ -70,7 +76,7 @@ class Player(User):
         index = 0 
 
         # Compute the commitment (aka the leaves of the merkle tree) for each field of the merkle tree
-        for key, value in self.clear_fields.items():
+        for key, value in self._clear_fields.items():
             # append the hashed value of the concatenation between the value and the randomness
             leaves.append(hash_concat_data_and_known_rand(value[0],value[1]))
             indices[key] = index
@@ -102,7 +108,7 @@ class Player(User):
         # compute the merkle proofs for the leaves that are in the policy, and the indices of the leaves 
         proofs, indices = self.__compute_proofs(policy)
         # get the clear values of the leaves that are in the policy
-        clear_values = {key: self.clear_fields[key] for key in policy} 
+        clear_values = {key: self._clear_fields[key] for key in policy} 
 
         return clear_values, proofs, indices    
     
@@ -119,22 +125,22 @@ class Player(User):
         """
         self.set_game_code(game_code)
         self.set_player_id(player_id)
-        self.round = 0
+        self._round = 0
 
         # Inizializzo la PRF per il calcolo dei contributi casuali
-        self.IV = int(rand_extract(2*self.security_param, "hex"), 16) # Cast to a 16-bit integer cause it's used as a counter
-        self.seed = rand_extract(2*self.security_param, "base64")
+        self._IV = int(rand_extract(2*self._security_param, "hex"), 16) # Cast to a 16-bit integer cause it's used as a counter
+        self._seed = rand_extract(2*self._security_param, "base64")
 
     def end_game(self):
         """ 
         End a game.
         """
-        self.game_code = None
-        self.player_id = None
-        self.round = 0
+        self._game_code = None
+        self._player_id = None
+        self._round = 0
 
-        self.IV = None
-        self.seed = None
+        self._IV = None
+        self._seed = None
 
     def set_game_code(self, game_code):
         """
@@ -146,7 +152,7 @@ class Player(User):
         if game_code is None:
             raise Exception("Game code not set.")
                 
-        self.game_code = game_code
+        self._game_code = game_code
 
     def set_player_id(self, player_id):
         """
@@ -158,7 +164,7 @@ class Player(User):
         if player_id is None:
             raise Exception("Player id not set.")
 
-        self.player_id = player_id
+        self._player_id = player_id
 
     def __generate_message(self):
         """
@@ -170,12 +176,12 @@ class Player(User):
                 The message to be sent to the sala bingo.
         """
         # If no game is started, no message can be computed
-        if self.game_code is None or self.player_id is None:
+        if self._game_code is None or self._player_id is None:
             raise Exception("Game code or player id not set. This player isn't in a game.")
         
         # Set the 
-        self.round += 1 # Go to next round
-        params = (self.player_id, self.game_code, str(self.round), str(datetime.datetime.now()))
+        self._round += 1 # Go to next round
+        params = (self._player_id, self._game_code, str(self._round), str(datetime.datetime.now()))
 
         # Compute commitment for a certain round
         comm = self.__compute_commitment()
@@ -183,9 +189,9 @@ class Player(User):
         # Sign the message made by params and commitment
         signature = self.__sign_message(concatenate(*list(params), *comm))
 
-        self.last_message = (params, comm, signature)
+        self._last_message = (params, comm, signature)
 
-        return self.last_message
+        return self._last_message
 
     def __compute_commitment(self):
         """
@@ -195,15 +201,15 @@ class Player(User):
                 The commitment of the contribution.
         """
         # Compute the PRF output
-        prf_output = execute_command(commands["get_prf_value"](self.seed, self.IV)).split('= ')[1].strip()
+        prf_output = execute_command(commands["get_prf_value"](self._seed, self._IV)).split('= ')[1].strip()
         # Update the IV
-        self.IV = (self.IV + 1) % 2*self.security_param
+        self._IV = (self._IV + 1) % (2*self._security_param)
 
         # Divide output in two equal parts: the first is the contribution, the second is the randomness used to commit
-        self.last_contribute = prf_output[:len(prf_output)//2]
-        self.last_randomess = prf_output[len(prf_output)//2:]
+        self._last_contribute = prf_output[:len(prf_output)//2]
+        self._last_randomess = prf_output[len(prf_output)//2:]
 
-        return compute_hash_from_data(self.last_contribute + self.last_randomess)
+        return compute_hash_from_data(self._last_contribute + self._last_randomess)
     
     def __sign_message(self, message):
         """
@@ -213,21 +219,19 @@ class Player(User):
                 The message to be signed.
         # Returns
             signature: string
-                The signature of the message.
+                The signature of the message.   
         """
         if message is None:
             raise Exception("Message is None. Can't sign a None message.")
-
-        # Write the message in a file
-        base_filename = self.user_name+'/'+self.user_name
-        sign_filename = base_filename + '_comm_sign.pem'
-        temp_filename = base_filename + "temp.txt"
         
+        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+        sign_filename = self._user_name+'/'+self._user_name+'_comm_sign.pem'
+
         with open(temp_filename, "w") as f:
             f.write(message)
 
-        # Sign the message contained in that file
-        sign_ECDSA(self.SK, temp_filename, sign_filename)
+        # sign the message
+        sign_ECDSA(self._SK, temp_filename, sign_filename)
         return sign_filename
     
     def send_commitment(self): # Nome da cambiare, non è solo il commitment
@@ -254,10 +258,10 @@ class Player(User):
         if signature is None:
             raise Exception("Signature not received.")
 
-        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
+        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
 
         with open(temp_filename, "w") as f: 
-            f.write(concatenate(*self.last_message[0], self.last_message[1], self.last_message[2]))
+            f.write(concatenate(*self._last_message[0], self._last_message[1], self._last_message[2]))
         
         if verify_ECDSA(self._bingo_PK, temp_filename, signature):
             self._bingo_sign_on_comm = signature
@@ -283,7 +287,7 @@ class Player(User):
         if pairs is None or signature is None:
             raise Exception("Commit pairs or signature are None.")
 
-        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
+        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
         
         self._contr_comm = pairs
 
@@ -310,7 +314,7 @@ class Player(User):
             opening: string
                 The opening as (message, randomness) pair.
         """
-        return self.last_contribute, self.last_randomess
+        return self._last_contribute, self._last_randomess
 
     def __compute_final_string(self):
         """
@@ -350,7 +354,7 @@ class Player(User):
 
         self._contr_open = openings
         
-        temp_filename = self.user_name+'/'+self.user_name+"_temp.txt"
+        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
 
         if self.__verify_commitments():
             # Compute the concatenation of commit messages and openings messages in order

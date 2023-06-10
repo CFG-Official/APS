@@ -54,7 +54,7 @@ def sign_ECDSA(priv_key_file, data_file, signature_file):
     """
     BU.execute_command(commands["ECDSA_sign"](data_file, priv_key_file, signature_file))
 
-def sign_ECDSA_from_variable(priv_key_file, data_variable):
+def sign_ECDSA_from_variable(priv_key_file, data_variable, signature_file):
     """ 
     Sign a file with the given private key.
     # Arguments
@@ -62,7 +62,7 @@ def sign_ECDSA_from_variable(priv_key_file, data_variable):
         data_variable: The variable to sign.
         signature_file: The file to store the signature in.
     """
-    return BU.execute_command(commands["ECDSA_sign_variable"](data_variable, priv_key_file))
+    return BU.execute_command(commands["ECDSA_sign_variable"](data_variable, priv_key_file, signature_file))
 
 def verify_ECDSA(pub_key_file, data_file, signature_file):
     """
@@ -134,6 +134,18 @@ def verify_RSA(pub_key_file, data_file, signature_file):
         signature_file: The file to read the signature from.
     """ 
     return BU.execute_command(commands["RSA_verify"](data_file, signature_file, pub_key_file))
+
+def base64_key_view(key_file):
+    """
+    Views a base64 key using the openssl bash command.
+    # Arguments
+        key_file: The file to read the key from.
+    # Returns
+        The output of the command.
+    """
+    with open(key_file, 'r') as f:
+        key = f.read()
+    return key.split("-----")[2].replace("\n", "")
 
 def concatenate(*args):
     risultato = ''.join(args)

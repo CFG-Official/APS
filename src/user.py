@@ -1,6 +1,3 @@
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
-
 from utils.bash_util import execute_command
 from utils.keys_util import gen_RSA_keys, export_RSA_pub_key, sign_RSA
 from utils.CA_util import create_CA, sign_cert
@@ -11,53 +8,65 @@ from utils.hash_util import compute_hash_from_file
 class User:
     """
     This class represents a user.
-    # Arguments
-        user_name: string
-            The name of the user.
     # Attributes
-        user_name: string
+        _user_name: string
             The name of the user.
-        PK: string
-            The name of the public key file.
-        SK: string
-            The name of the private key file.
-        CIE_certificate: string
+        _CIE_fields: list
+            The list of the CIE fields.
+        _PK: string
+            The name of the user public key file.
+        _SK: string
+            The name of the user private key file.
+        _CIE_certificate: string
             The name of the CIE certificate file.
-        GP_certificate: string
+        _GP_certificate: string
             The name of the GP certificate file.
+        _clear_fields: list
+            The list of the clear fields.
     # Methods
+        __obtain_CIE_keys()
+            Obtain the CIE keys.
+        __obtain_CIE_certificate()
+            Obtain the CIE certificate from the CIE card.
         send_CIE_and_sign(rand)
             Send the CIE certificate and sign the random number contactenated to the certificate.
         require_GP()
             Require the GP certificate.
+        get_GP()
+            Get the GP certificate.
     """
     
+    #__slots__ = ['_user_name', '_CIE_fields', '_PK', '_SK', '_CIE_certificate', '_GP_certificate', '_clear_fields']
+    
     def __init__(self,CIE_fields):
-        self.user_name = CIE_fields[0]
-        self.CIE_fields = CIE_fields
-        execute_command(commands["create_directory"](self.user_name))  
+        """ 
+        Initialize the user.
+        """
+        self._user_name = CIE_fields[0]
+        self._CIE_fields = CIE_fields
+        execute_command(commands["create_directory"](self._user_name))  
         self.__obtain_CIE_keys()
         self.__obtain_CIE_certificate()
-        self.GP_certificate = None
-        self.clear_fields = None
+        self._GP_certificate = None
+        self._clear_fields = None
 
     def __obtain_CIE_keys(self):
         """
         Obtain the CIE keys.
         """
-        gen_RSA_keys(2048, self.user_name + "/private_key.pem")
-        export_RSA_pub_key(self.user_name + "/private_key.pem", self.user_name + "/public_key.pem")
-        self.PK = self.user_name + "/public_key.pem"
-        self.SK = self.user_name + "/private_key.pem"
+        gen_RSA_keys(2048, self._user_name + "/private_key.pem")
+        export_RSA_pub_key(self._user_name + "/private_key.pem", self._user_name + "/public_key.pem")
+        self._PK = self._user_name + "/public_key.pem"
+        self._SK = self._user_name + "/private_key.pem"
 
     def __obtain_CIE_certificate(self):
         """
         Obtain the CIE certificate from the CIE card.
         """
         create_CA("MdI", "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/MdI.cnf")
-        require_certificate_with_given_fields(self.CIE_fields, self.SK, self.user_name+'/'+self.user_name+"_CIE_request.cert", "src/configuration_files/user.cnf")
-        sign_cert(self.user_name+'/'+self.user_name+"_CIE_request.cert", self.user_name+'/'+self.user_name+"_CIE_certificate.cert", "src/configuration_files/MdI.cnf")
-        self.CIE_certificate =self.user_name+'/'+self.user_name+"_CIE_certificate.cert"
+        require_certificate_with_given_fields(self._CIE_fields, self._SK, self._user_name+'/'+self._user_name+"_CIE_request.cert", "src/configuration_files/user.cnf")
+        sign_cert(self._user_name+'/'+self._user_name+"_CIE_request.cert", self._user_name+'/'+self._user_name+"_CIE_certificate.cert", "src/configuration_files/MdI.cnf")
+        self._CIE_certificate =self._user_name+'/'+self._user_name+"_CIE_certificate.cert"
         
     def send_CIE_and_sign(self,rand):
         """
@@ -71,10 +80,11 @@ class User:
             CIE_signature: string
                 The name of the CIE signature file.
         """
-        body = concat_cert_and_rand(self.CIE_certificate,rand)
-        compute_hash_from_file(body, self.user_name+'/'+self.user_name+"_hashed_concat.cert")
-        sign_RSA(self.SK, self.user_name+'/'+self.user_name+"_hashed_concat.cert", self.user_name+'/'+self.user_name+"_CIE_signature.pem")
-        return self.CIE_certificate, self.user_name+'/'+self.user_name+"_CIE_signature.pem"
+        body = concat_cert_and_rand(self._CIE_certificate,rand)
+        compute_hash_from_file(body, self._user_name+'/'+self._user_name+"_hashed_concat.cert")
+        sign_RSA(self._SK, self._user_name+'/'+self._user_name+"_hashed_concat.cert", self._user_name+'/'+self._user_name+"_CIE_signature.pem")
+        print("-> "+self._user_name,": CIE and signature sent")
+        return self._CIE_certificate, self._user_name+'/'+self._user_name+"_CIE_signature.pem"
     
     def require_GP(self):
         """
@@ -84,8 +94,9 @@ class User:
                 The name of the GP csr file.
         """
         GP_fields = ["--"]*6
-        require_certificate_with_given_fields(GP_fields,self.SK, self.user_name+'/'+self.user_name+"_GP_request.csr", "src/configuration_files/user.cnf")
-        return self.user_name+'/'+self.user_name+"_GP_request.csr"
+        require_certificate_with_given_fields(GP_fields,self._SK, self._user_name+'/'+self._user_name+"_GP_request.csr", "src/configuration_files/user.cnf")
+        print("-> "+self._user_name,": CSR request for GP created")
+        return self._user_name+'/'+self._user_name+"_GP_request.csr"
 
     def get_GP(self, GP_certificate, clear_fields):
         """
@@ -96,8 +107,10 @@ class User:
             clear_fields: string
                 The clear fields. 
         """
-        self.GP_certificate = GP_certificate
-        self.clear_fields = clear_fields
+
+        print("MARAMEO LOL ")
+        self._GP_certificate = GP_certificate
+        self._clear_fields = clear_fields
 
     def get_name(self):
         """
@@ -107,4 +120,4 @@ class User:
             user_name: string
                 The name of the user
         """
-        return self.user_name
+        return self._user_name

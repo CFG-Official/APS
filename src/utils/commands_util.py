@@ -20,7 +20,7 @@ commands = {
     "rand_view_base64": lambda in_file: f'cat {in_file} | xxd -p | base64',
     "get_prf_value": lambda k, iv:f'echo -n {iv} | {openssl} dgst -sha256 -hmac {k}',
     # Hash
-    "compute_hash_from_data": lambda data: f'printf {data} | openssl dgst -sha3-256',
+    "compute_hash_from_data": lambda data: f'echo -n "{data}" | openssl dgst -sha3-256',
     "compute_hash_from_file": lambda in_file, out_file, hash_alg: f'{openssl} dgst -{hash_alg} {in_file} >> {out_file}',
     # RSA keys
     "RSA_priv_key_gen": lambda out_file, num_bits: f'{openssl} genrsa -out {out_file} {num_bits}',
@@ -37,7 +37,7 @@ commands = {
     "ECDSA_pub_key_gen": lambda priv_key_file, out_file: f'{openssl} pkey -in {priv_key_file} -pubout -out {out_file}',
     "ECDSA_pub_key_view": lambda in_file: f'{openssl} pkey -pubin -in {in_file} -text',
     "ECDSA_sign": lambda in_file, priv_key_file, signature: f'{openssl} dgst -sign {priv_key_file} -out {signature} {in_file}',
-    "ECDSA_sign_variable": lambda in_data, priv_key_file: f'echo -n {in_data} | {openssl} dgst -sign {priv_key_file} -hex',
+        "ECDSA_sign_variable": lambda in_data, priv_key_file, signature_file: f'echo -n {in_data} | {openssl} dgst -sign {priv_key_file} -out {signature_file}',
     "ECDSA_verify": lambda in_file, signature, pub_key_file: f'{openssl} dgst -verify {pub_key_file} -signature {signature} {in_file}',
     # Certificate Signing Requests
     "CSR_gen": lambda priv_key_file, out_file, config_file: f'{openssl} req -new -key {priv_key_file} -out {out_file} -config {config_file}',
@@ -65,5 +65,5 @@ commands = {
     "cert_extract_expiration_date": lambda cert_file: f'{openssl} x509 -in {cert_file} -noout -enddate',
     "cert_extract_merkle_root": lambda cert_file: f'openssl x509 -in {cert_file} -text',
     "copy_cert": lambda in_file, out_file: f'cp {in_file} {out_file}',
-    "validate_certificate":lambda CA_cert, cert_user:f'openssl verify -CAfile {CA_cert} {cert_user} '
+    "validate_certificate":lambda CA_cert, cert_user:f'openssl verify -CAfile {CA_cert} {cert_user}'
 }

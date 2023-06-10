@@ -106,8 +106,6 @@ class Bingo:
         if GP is None:
             raise Exception("GP is None")
 
-        #self._GPs.append(GP) DUPLICE AGGIUNTA
-
         if self.__check_CA(GP, self._known_CAs[0]) and self.__check_expiration(GP) and self.__check_sign(GP, self._known_CAs[0]):
             self._GPs.append(GP)
             return True
