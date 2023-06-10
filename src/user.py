@@ -107,5 +107,17 @@ class User:
             clear_fields: string
                 The clear fields. 
         """
+
+        print("MARAMEO LOL ")
         self._GP_certificate = GP_certificate
         self._clear_fields = clear_fields
+
+    def get_name(self):
+        """
+        Get the name of the user.
+
+        # Returns
+            user_name: string
+                The name of the user
+        """
+        return self._user_name
