@@ -2,6 +2,7 @@ import sys
 from player import Player
 from bingo import Bingo
 from AS import AS
+from DPA import DPA
 
 import AS_authentication as AS_util
 import bingo_authentication as bingo_util
@@ -30,6 +31,7 @@ def main():
 
     res_validation_alice = bingo_util.validation(alice,bingo,policy)
     res_validation_bob = bingo_util.validation(bob,bingo,policy)
+
     if res_validation_alice is None:
         print("Player Alice is not allowed to play")
     if res_validation_bob is None:
@@ -41,8 +43,9 @@ def main():
 
     # The user is now authenticated and can play
     print("---------- GAME STARTING ----------")
-    alice.start_game(game_code,alice_id)
-    bob.start_game(game_code,bob_id)
+    alice.start_game(game_code,alice_id, res_validation_alice[2])
+    bob.start_game(game_code,bob_id, res_validation_bob[2])
+    
     bingo.receive_mapping(alice_id, alice.generate_mapping()) # Receive the mapping from the player
     bingo.receive_mapping(bob_id, bob.generate_mapping()) # Receive the mapping from the player
     
