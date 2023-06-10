@@ -17,7 +17,7 @@ class Player(User):
     This class represents a player of the bingo game, it inherits from the User class.
     """
         
-    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC']
+    __slots__ = ['_game_code', '_player_id', '_round', '_seed', '_IV', '_security_param', '_final_string', '_contr_comm', '_contr_open', '_last_message', '_last_contribute', '_last_randomness', '_SK_BC', '_PK_BC', '_blockchain']
 
     def __init__(self, CIE_fields):
         super().__init__(CIE_fields)
@@ -137,7 +137,7 @@ class Player(User):
     
     # GAME    
 
-    def start_game(self, game_code, player_id):
+    def start_game(self, game_code, player_id, blocks = False):
         """ 
         Start a game.
         # Arguments
@@ -146,6 +146,7 @@ class Player(User):
             player_id: string
                 The player id.
         """
+        self._blockchain = blocks
         self.set_game_code(game_code)
         self.set_player_id(player_id)
         self._round = 0
@@ -292,7 +293,7 @@ class Player(User):
         
         return False
     
-    def receive_commitments_and_signature(self, pairs, signature):
+    def receive_commitments_and_signature(self, pairs, signature = None):
         """
         The player receives the commitments, the parameters of other player
         and the signature of the sala bingo on them. 
@@ -307,28 +308,35 @@ class Player(User):
         # Returns
             true if the signature is valid, false otherwise.
         """
-        if pairs is None or signature is None:
-            raise Exception("Commit pairs or signature are None.")
-
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
         
-        self._contr_comm = pairs
+        if not self._blockchain:
+            print(pairs, signature)
+            if pairs is None or signature is None:
+                raise Exception("Commit pairs or signature are None.")
 
-        concat = ""
-        for pair in pairs:
-            for param in pair[0]:
-                concat += param
-            concat += pair[1]
-        
-        with open(temp_filename, "w") as f:
-            f.write(concat)
+            temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+            
+            self._contr_comm = pairs
 
-        # Verify that the received signature is valid
-        if verify_ECDSA(self._bingo_PK, temp_filename, signature):
-            self._bingo_sign_on_comm = signature
-            return True
+            concat = ""
+            for pair in pairs:
+                for param in pair[0]:
+                    concat += param
+                concat += pair[1]
+            
+            with open(temp_filename, "w") as f:
+                f.write(concat)
+
+            # Verify that the received signature is valid
+            if verify_ECDSA(self._bingo_PK, temp_filename, signature):
+                self._bingo_sign_on_comm = signature
+                return True
+            
+            return False
         
-        return False
+        else:
+            # process block
+            pass
     
     def send_opening(self):
         """ 
@@ -364,7 +372,7 @@ class Player(User):
                 return False
         return True
     
-    def receive_openings(self, openings, signature):
+    def receive_openings(self, openings, signature = None):
         """ 
         The player receives the openings from the sala bingo and computes
         the final string.
@@ -372,28 +380,34 @@ class Player(User):
             openings: list
                 The list of openings (message, randomness).
         """
-        if openings is None or signature is None:
-            raise Exception("Openings or signature are None.")
+        if not self._blockchain:
+            
+            if openings is None or signature is None:
+                raise Exception("Openings or signature are None.")
 
-        self._contr_open = openings
+            self._contr_open = openings
+            
+            temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+
+            if self.__verify_commitments():
+                # Compute the concatenation of commit messages and openings messages in order
+                # to verify the signature of sala bingo
+                concat = ""
+                for contr, opening in zip(self._contr_comm, self._contr_open):
+                    concat += concatenate(*contr[0], contr[1], opening[0], opening[1])
+                with open(temp_filename, "w") as f:
+                    f.write(concat)
+
+                # Verify the signature of sala bingo
+                res = verify_ECDSA(self._bingo_PK, temp_filename, signature)
+                self._final_string = self.__compute_final_string()
+                return res
+            else:
+                raise Exception("Commitments not valid.")
         
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
-
-        if self.__verify_commitments():
-            # Compute the concatenation of commit messages and openings messages in order
-            # to verify the signature of sala bingo
-            concat = ""
-            for contr, opening in zip(self._contr_comm, self._contr_open):
-                concat += concatenate(*contr[0], contr[1], opening[0], opening[1])
-            with open(temp_filename, "w") as f:
-                f.write(concat)
-
-            # Verify the signature of sala bingo
-            res = verify_ECDSA(self._bingo_PK, temp_filename, signature)
-            self._final_string = self.__compute_final_string()
-            return res
         else:
-            raise Exception("Commitments not valid.")
+            # process block
+            pass
         
     def get_final_string(self):
         """

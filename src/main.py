@@ -1,9 +1,7 @@
 import sys
 from player import Player
 from bingo import Bingo
-from DPA import DPA
 from AS import AS
-from blockchain import Blockchain
 
 import AS_authentication as AS_util
 import bingo_authentication as bingo_util
@@ -50,7 +48,7 @@ def main():
     
     # bingo.add_pre_game_block()
     round.multi_play([alice, bob], bingo)
-    
+
     bob.end_game()
     alice.end_game()
 
