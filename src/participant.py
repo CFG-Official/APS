@@ -102,8 +102,8 @@ class Participant:
         if message is None:
             raise Exception("Message is None. Can't sign a None message.")
         
-        temp_filename = name+'/'+name+"_temp.txt"
-        sign_filename = name+'/'+name+'_comm_sign.pem'
+        temp_filename = name+"temp.txt"
+        sign_filename = name+'comm_sign.pem'
 
         with open(temp_filename, "w") as f:
             f.write(message)

@@ -6,19 +6,25 @@ import AS_authentication as AS_util
 import bingo_authentication as bingo_util
 import round
 import time
+import os
 
 performance = {}
 
 def main():
     # A user requires a GP to play
-    alice = Player(["Alice", "IT", "F", "Rome", "1990-01-01", "CF1"])
-    bob = Player(["Bob", "IT", "F", "Rome", "1999-01-01", "CF2"])
+    folder = "Application"
+    if os.path.exists(folder):
+        os.system("rm -r " + folder)
+    os.mkdir(folder)
+    
+    alice = Player(["Alice", "IT", "F", "Rome", "1990-01-01", "CF1"], folder)
+    bob = Player(["Bob", "IT", "F", "Rome", "1999-01-01", "CF2"], folder)
 
     print("---------- GP REQUEST ----------")
     print("-> ", alice.get_name(), "Requires the GP to the AS...")
     print("-> ", bob.get_name(), "Requires the GP to the AS...")
     start_time = time.time()
-    authority = AS()
+    authority = AS(folder)
     AS_util.authentication(alice, authority)
     performance["Alice Authentication"] = time.time() - start_time
     start_time = time.time()
@@ -29,7 +35,7 @@ def main():
     print("---------- Bingo AUTHENTICATION ----------")
     #bingo = EvilBingo()
     start_time = time.time()
-    bingo = Bingo()
+    bingo = Bingo(folder)
     bingo.set_blockchain()
     alice.set_auth_id(bingo_util.authentication(alice,bingo))
     bob.set_auth_id(bingo_util.authentication(bob,bingo))

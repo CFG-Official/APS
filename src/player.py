@@ -19,8 +19,8 @@ class Player(User, Participant):
         
     __slots__ = ['_final_string', '_contr_comm', '_contr_open', '_SK_BC', '_PK_BC', '_blockchain', '_state']
 
-    def __init__(self, CIE_fields):
-        User.__init__(self,CIE_fields)
+    def __init__(self, CIE_fields, folder):
+        User.__init__(self,CIE_fields, folder)
         Participant.__init__(self)
         self._auth_id = None
         self._contr_comm = []
@@ -142,7 +142,7 @@ class Player(User, Participant):
             signature: string
                 The signature of the player on the commitment.
         """
-        return super().generate_message(self._SK_GP, self._user_name)
+        return super().generate_message(self._SK_GP, self._folder)
     
     def receive_signature(self, signature):
         """ 
@@ -154,7 +154,7 @@ class Player(User, Participant):
         if signature is None:
             raise Exception("Signature not received.")
 
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+        temp_filename = self._folder+self._user_name+"_temp.txt"
 
         with open(temp_filename, "w") as f: 
             f.write(concatenate(*self._last_message[0], self._last_message[1], self._last_message[2]))
@@ -180,7 +180,7 @@ class Player(User, Participant):
         # Returns
             true if the signature is valid, false otherwise.
         """
-        temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+        temp_filename = self._folder+self._user_name+"_temp.txt"
         
         if self._blockchain is None:
 
@@ -282,7 +282,7 @@ class Player(User, Participant):
 
             self._contr_open = openings
             
-            temp_filename = self._user_name+'/'+self._user_name+"_temp.txt"
+            temp_filename = self._folder+self._user_name+"_temp.txt"
 
             if self.__verify_commitments(self._contr_comm, self._contr_open):
                 # Compute the concatenation of commit messages and openings messages in order
@@ -349,25 +349,25 @@ class Player(User, Participant):
 
         # Generate a new key pair using ECDSA
         print("Generating new key pair for mapping...")
-        base_filename = self._user_name+'/'+ 'BC_mapping_'
+        base_filename = self._folder+ 'BC_mapping_'
         self._SK_BC = base_filename + 'private_key.pem'
         self._PK_BC = base_filename + 'public_key.pem'
         gen_ECDSA_keys('prime256v1', base_filename + 'param.pem', self._SK_BC, self._PK_BC)
         
         # Fiat-Shamir 86 protocol with mapping key
         print("Generating signature for mapping...")
-        signature_bc = self._user_name+'/'+self._user_name+'_BC_mapping_sign.pem'
-        with open(self._user_name + "/void_file.txt", "w") as f:
+        signature_bc = self._folder + self._user_name+'_BC_mapping_sign.pem'
+        with open(self._folder + self._user_name + "_void_file.txt", "w") as f:
                 f.write('')
-        sign_ECDSA(self._SK_BC, self._user_name + "/void_file.txt", signature_bc)
+        sign_ECDSA(self._SK_BC, self._folder + self._user_name + "_void_file.txt", signature_bc)
         temp = (self._PK_BC, signature_bc)
 
         # Shnorr signature with GP key
         print("Generating signature for mapping...")
-        signature_gp = self._user_name+'/'+self._user_name+'_GP_mapping_sign.pem'
-        with open(self._user_name + "/_temp_sign_mapping.txt", "w") as f:
+        signature_gp = self._folder + self._user_name+'_GP_mapping_sign.pem'
+        with open(self._folder + self._user_name + "_temp_sign_mapping.txt", "w") as f:
                 f.write(concatenate(*temp))
-        sign_ECDSA(self._SK_GP, self._user_name + "/_temp_sign_mapping.txt", signature_gp)
+        sign_ECDSA(self._SK_GP, self._folder + self._user_name + "_temp_sign_mapping.txt", signature_gp)
 
         return temp, signature_gp
 
@@ -394,8 +394,8 @@ class Player(User, Participant):
         # winner_info = (winner_id, bingo_signature)
         concat = winner_info[0] + self._game_code
 
-        with open(self._user_name + "/"+ self._user_name +"_temp_winner.txt", "w") as f:
+        with open(self._folder+ self._user_name +"_temp_winner.txt", "w") as f:
             f.write(concat)
-        if verify_ECDSA(self._bingo_PK, self._user_name + "/"+ self._user_name +"_temp_winner.txt", winner_info[1]):
-            sign_ECDSA(self._SK_BC,self._user_name + "/"+ self._user_name +"_temp_winner.txt", self._user_name + "/"+ self._user_name +"_temp_winner_sign.txt")
-            return (self._player_id, self._user_name + "/"+ self._user_name +"_temp_winner_sign.txt")
+        if verify_ECDSA(self._bingo_PK, self._folder + self._user_name +"_temp_winner.txt", winner_info[1]):
+            sign_ECDSA(self._SK_BC,self._folder + self._user_name +"_temp_winner.txt", self._folder + self._user_name +"_temp_winner_sign.txt")
+            return (self._player_id, self._folder + self._user_name +"_temp_winner_sign.txt")

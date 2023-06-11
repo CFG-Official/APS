@@ -19,26 +19,28 @@ class Bingo(Participant):
     This class represents the sala bingo.
     """
     
-    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_last_auth_id','_current_commitment_block','_current_opening_block', '_winner_id']
+    __slots__ = ['_known_CAs', '_GPs', '_SK', '_PK', '_final_string', '_blockchain', '_players_info', '_last_id', '_last_auth_id','_current_commitment_block','_current_opening_block', '_winner_id', '_folder']
     
-    def __init__(self):
+    def __init__(self, folder):
         Participant.__init__(self)
+        self._folder = folder+"/Bingo/"
         self._blockchain = None
-        execute_command(commands["create_directory"]("Bingo"))
-        execute_command(commands["copy_cert"]("AS/auto_certificate.cert", "Bingo/AS.cert"))
-        self._known_CAs = ["Bingo/AS.cert"]
+        execute_command(commands["create_directory"](self._folder))
+        execute_command(commands["copy_cert"](folder+"/AS/auto_certificate.cert", self._folder+"AS.cert"))
+        self._known_CAs = [self._folder+"AS.cert"]
         self._GPs = {}
         self._players_info = {}
         self._final_string = None
-        gen_ECDSA_keys("prime256v1", "Bingo/params.pem", "Bingo/private_key.pem", "Bingo/public_key.pem")
-        self._SK = "Bingo/private_key.pem"
-        self._PK = "Bingo/public_key.pem"
+        gen_ECDSA_keys("prime256v1", self._folder+"params.pem", self._folder+"private_key.pem", self._folder+"public_key.pem")
+        self._SK = self._folder+"private_key.pem"
+        self._PK = self._folder+"public_key.pem"
         self._last_id = 0
         self._last_auth_id = 0
         self._current_commitment_block = None
         self._current_opening_block = None
         self._winner_id = None
         self._game_code = str(random.randint(0,1000000))
+        
         
     # BLOCKCHAIN VERSION
     def get_blockchain(self):
@@ -274,7 +276,7 @@ class Bingo(Participant):
         self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
         self._seed = rand_extract(self._security_param, "base64")
         
-        super().generate_message(self._SK, "Bingo")
+        super().generate_message(self._SK, self._folder)
         
     def receive_commitment(self, params, commitment, signature):
         """ 
@@ -304,16 +306,16 @@ class Bingo(Participant):
 
         # verify the signature of the user on the commitment and the additional parameters
         # using the PK contained in the GP certificate
-        extract_public_key(self._GPs[self._players_info[id]['auth_id']], "Bingo/GP_PK.pem")
-        with open("Bingo/concat.txt", "w") as f:
+        extract_public_key(self._GPs[self._players_info[id]['auth_id']], self._folder+"GP_PK.pem")
+        with open(self._folder+"concat.txt", "w") as f:
             f.write(concat)
-        if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", signature):
+        if verify_ECDSA(self._folder+"GP_PK.pem", self._folder+"concat.txt", signature):
             # compute the signature of the sala bingo on all of them
             concat += signature
-            with open("Bingo/concat.txt", "w") as f:
+            with open(self._folder+"concat.txt", "w") as f:
                 f.write(concat)
-            sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
-            return "Bingo/signature.pem"
+            sign_ECDSA(self._SK, self._folder+"concat.txt", self._folder+"signature.pem")
+            return self._folder+"signature.pem"
         return None
             
     def publish_commitments_and_signature(self):
@@ -344,10 +346,10 @@ class Bingo(Participant):
         for id in ids:
             concat += self._players_info[id]["concat_1"]# params + commitment
 
-        with open("Bingo/concat.txt", "w") as f:
+        with open(self._folder+"concat.txt", "w") as f:
             f.write(concat) 
 
-        sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+        sign_ECDSA(self._SK, self._folder+"concat.txt", self._folder+"signature.pem")
         
         pairs = []
 
@@ -366,7 +368,7 @@ class Bingo(Participant):
                 self._current_commitment_block = self._blockchain.add_block('commit', self._game_code, data)
             return self._current_commitment_block, ""
         else:
-            return pairs, "Bingo/signature.pem"
+            return pairs, self._folder+"signature.pem"
     
     def receive_opening(self, id, contribution, randomness):
         """ 
@@ -442,9 +444,9 @@ class Bingo(Participant):
                 concat += self._players_info[id]["concat_1"]
                 concat += self._players_info[id]["opening"]["contribution"] + self._players_info[id]["opening"]["randomness"]
                 
-            with open("Bingo/concat.txt", "w") as f:
+            with open(self._folder+"concat.txt", "w") as f:
                 f.write(concat)
-            sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+            sign_ECDSA(self._SK, self._folder+"concat.txt", self._folder+"signature.pem")
             self._final_string = self.__compute_final_string()
             
             if self._blockchain != None:
@@ -459,7 +461,7 @@ class Bingo(Participant):
                     self._current_opening_block = self._blockchain.add_block('reveal',self._game_code, data)
                 return self._current_opening_block , ""
             else:
-                return openings, "Bingo/signature.pem"
+                return openings, self._folder+"signature.pem"
         else:
             raise Exception("Commitments not valid.")
         
@@ -471,17 +473,17 @@ class Bingo(Participant):
     
     def receive_mapping(self, player_id, mapping):
         # Verify signature with the original PK of the player
-        extract_public_key(self._GPs[self._players_info[player_id]['auth_id']], "Bingo/GP_PK.pem")
-        with open("Bingo/concat.txt", "w") as f:
+        extract_public_key(self._GPs[self._players_info[player_id]['auth_id']],self._folder+"GP_PK.pem")
+        with open(self._folder+"concat.txt", "w") as f:
             f.write(concatenate(*mapping[0]))
         
-        if verify_ECDSA("Bingo/GP_PK.pem", "Bingo/concat.txt", mapping[1]):
+        if verify_ECDSA(self._folder+"GP_PK.pem", self._folder+"concat.txt", mapping[1]):
             # Verify that the mapping is valid, i.e. verify that signature
             # of the player on the mapping is correctly computed
             new_pk = mapping[0][0]
-            with open("Bingo/concat.txt", "w") as f:
+            with open(self._folder+"concat.txt", "w") as f:
                 f.write('')
-            if verify_ECDSA(new_pk, "Bingo/concat.txt", mapping[0][1]):
+            if verify_ECDSA(new_pk, self._folder+"concat.txt", mapping[0][1]):
                 self._players_info[player_id]["BC_PK"] = new_pk
                 
     def choose_winner(self):
@@ -495,12 +497,12 @@ class Bingo(Participant):
         self._winner_id = random.choice(ids)
         
         concat = self._winner_id + self._game_code
-        with open("Bingo/concat.txt", "w") as f:
+        with open(self._folder+"concat.txt", "w") as f:
             f.write(concat)
             
-        sign_ECDSA(self._SK, "Bingo/concat.txt", "Bingo/signature.pem")
+        sign_ECDSA(self._SK, self._folder+"concat.txt", self._folder+"signature.pem")
 
-        return (self._winner_id, "Bingo/signature.pem")
+        return (self._winner_id, self._folder+"signature.pem")
     
     def end_game(self, *signs):
         """ 
@@ -513,7 +515,7 @@ class Bingo(Participant):
         """
         
         signs = list(*signs)
-        signs.append((self._player_id, "Bingo/signature.pem"))
+        signs.append((self._player_id, self._folder+"signature.pem"))
 
         if len(signs) < len(self._players_info):
             raise Exception("Not enough signatures")
@@ -523,7 +525,7 @@ class Bingo(Participant):
         sign_dict = {}
         for sign in signs:
             print(self._players_info[sign[0]]["BC_PK"])
-            if not verify_ECDSA(self._players_info[sign[0]]["BC_PK"],"Bingo/concat.txt", sign[1]):
+            if not verify_ECDSA(self._players_info[sign[0]]["BC_PK"],self._folder+"concat.txt", sign[1]):
                 raise Exception("Invalid signature")
             sign_dict[sign[0]] = sign[1]
         

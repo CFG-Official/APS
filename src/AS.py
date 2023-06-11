@@ -47,20 +47,21 @@ class AS:
             Release the GP certificate.
     """
     
-    __slots__ = ['_AS_auto_certificate', '_PK', '_SK', '_rand', '_security_param', '_PK_user', '_CIE_certificate', '_user_data']
+    __slots__ = ['_AS_auto_certificate', '_PK', '_SK', '_rand', '_security_param', '_PK_user', '_CIE_certificate', '_user_data','_folder']
     
-    def __init__(self):
-        self.__create_CA()
+    def __init__(self, folder):
         self._security_param = 32 # (in bytes) -> 256 bits
+        self._folder = folder+"/AS/"
+        self.__create_CA()
         
     def __create_CA(self):
         """
         Create the CA.
         """
-        create_CA("AS", "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/AS.cnf")
-        self._AS_auto_certificate = "AS/auto_certificate.cert"
-        self._PK = "AS/public_key.pem"
-        self._SK = "AS/private/private_key.pem"
+        create_CA(self._folder, "private_key.pem", "public_key.pem", "auto_certificate.cert", "src/configuration_files/AS.cnf")
+        self._AS_auto_certificate = self._folder+"auto_certificate.cert"
+        self._PK = self._folder+"public_key.pem"
+        self._SK = self._folder+"private/private_key.pem"
         
     def send_randomness(self):
         """
@@ -80,8 +81,8 @@ class AS:
             CIE_certificate: string
                 The name of the CIE certificate file.
         """
-        extract_public_key(CIE_certificate, "AS/CIE_PK.pem")
-        self._PK_user = "AS/CIE_PK.pem"
+        extract_public_key(CIE_certificate, self._folder+"CIE_PK.pem")
+        self._PK_user = self._folder+"CIE_PK.pem"
         self._CIE_certificate = CIE_certificate
     
     def __generate_user_data(self, CIE_certificate):
@@ -124,8 +125,8 @@ class AS:
         """
         self.__obtain_CIE_PK(CIE_certificate)
         body = concat_cert_and_rand(CIE_certificate,self._rand)
-        compute_hash_from_file(body, 'AS/hashed_concat.cert')
-        if verify_RSA(self._PK_user, 'AS/hashed_concat.cert', signature):
+        compute_hash_from_file(body, self._folder+'hashed_concat.cert')
+        if verify_RSA(self._PK_user, self._folder+'hashed_concat.cert', signature):
             print("-> AS: CIE signature verified, the user is authentic.")
         else:
             raise Exception("! AS: CIE signature not verified, the user is not authentic.")

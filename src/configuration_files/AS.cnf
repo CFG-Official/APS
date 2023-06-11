@@ -19,7 +19,7 @@ O = Servizio Sanitario Nazionale
 OU = Rilascio/Revoca GP
 
 [ AS ]
-dir = AS
+dir = Application/AS
 certificate = $dir/auto_certificate.cert
 private_key = $dir/private/private_key.pem
 new_certs_dir = $dir/certs

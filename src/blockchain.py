@@ -1,9 +1,8 @@
 import os
 from blocks import *
-import pickle
 
 class Blockchain:
-    __blockchain_directory_name = 'Blockchain'
+    __blockchain_directory_name = 'Application/Blockchain'
     __blockchain_directory_path = os.path.join(os.getcwd(), __blockchain_directory_name)
     __blockchain_keys_directory_path = os.path.join(__blockchain_directory_path, 'keys')
     __blockchain_signatures_directory_path = os.path.join(__blockchain_directory_path, 'signatures')

@@ -19,7 +19,7 @@ O = Via del Viminale, 1
 OU = MI
 
 [ MdI ]
-dir = MdI
+dir = Application/MdI
 certificate = $dir/auto_certificate.cert
 private_key = $dir/private/private_key.pem
 new_certs_dir = $dir/certs
