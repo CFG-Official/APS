@@ -12,6 +12,7 @@ from utils.hash_util import compute_hash_from_data
 from utils.pseudorandom_util import rand_extract
 from blockchain import Blockchain
 import random
+import os
 
 class Bingo(Participant):
     
@@ -39,7 +40,7 @@ class Bingo(Participant):
         self._current_commitment_block = None
         self._current_opening_block = None
         self._winner_id = None
-        self._game_code = str(random.randint(0,1000000))
+        self._game_code = str(os.urandom(16).hex())
         
     def get_folder(self):
         """
@@ -544,3 +545,4 @@ class Bingo(Participant):
             data[id] = (self._winner_id, self._game_code, sign_dict[id])
         
         self._blockchain.add_block('end_game', self._game_code, data)
+        
