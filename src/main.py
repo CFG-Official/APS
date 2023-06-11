@@ -67,12 +67,18 @@ def main():
     
     bingo.add_pre_game_block()
     performance["Players initializations"] = time.time() - start_time
-    round.multi_play([alice,bob],bingo)
-    performance["One Round Time"] = time.time() - start_time
+    
     start_time = time.time()
+    round.multi_play([alice,bob],bingo)
+    r = 1
+    performance["Round "+str(r)] = time.time() - start_time
+    
     for i in range(0, 9):
+        start_time = time.time()
+        r += 1
         round.multi_play([alice,bob],bingo)
-
+        performance["Round "+str(r)] = time.time() - start_time
+        
     start_time = time.time()
     winner = bingo.choose_winner()
     
@@ -90,6 +96,12 @@ def main():
     print("---------- PERFORMANCE ----------")
     for key in performance:
         print(key, ":", performance[key])
-
+        
+    # export performances to a csv file
+    with open('performance.csv', 'w') as f:
+        for key in performance.keys():
+            f.write("%s,%s\n"%(key,performance[key]))
+        print("Performance exported to performance.csv")
+        
 if __name__ == "__main__":
     main()
