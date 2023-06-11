@@ -316,7 +316,7 @@ class Bingo(Participant):
         extract_public_key(self._GPs[self._players_info[id]['auth_id']], self._folder+"GP_PK.pem")
         with open(self._folder+"concat.txt", "w") as f:
             f.write(concat)
-        if verify_ECDSA(self._folder+"GP_PK.pem", self._folder+"concat.txt", signature):
+        if verify_ECDSA(self._players_info[id]["BC_PK"], self._folder+"concat.txt", signature):
             # compute the signature of the sala bingo on all of them
             concat += signature
             with open(self._folder+"concat.txt", "w") as f:

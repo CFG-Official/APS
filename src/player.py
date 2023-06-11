@@ -142,7 +142,7 @@ class Player(User, Participant):
             signature: string
                 The signature of the player on the commitment.
         """
-        return super().generate_message(self._SK_GP, self._folder)
+        return super().generate_message(self._SK_BC, self._folder)
     
     def receive_signature(self, signature):
         """ 
@@ -220,7 +220,7 @@ class Player(User, Participant):
             with open(temp_filename, "w") as f:
                 f.write(concat)
                 
-            if not verify_ECDSA(self._PK_GP, temp_filename, my_pair[2]):
+            if not verify_ECDSA(self._PK_BC, temp_filename, my_pair[2]):
                 raise Exception("Player's signature on its own pair is not valid.")
             
             # verify bingo's signature on the block
