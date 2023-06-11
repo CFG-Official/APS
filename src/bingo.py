@@ -62,8 +62,6 @@ class Bingo(Participant):
         data = {id: info['BC_PK'] for id, info in self._players_info.items()}
         self._blockchain.add_block('pre_game', self._game_code, data)
 
-    # other parts of your code...
-
     def __check_CA(self, GP_cert, CA_cert):
         """Check if issuer of GP_cert is the same as subject of CA_cert."""
         issuer = execute_command(commands["cert_extract_issuer"](GP_cert))
