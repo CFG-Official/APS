@@ -8,7 +8,7 @@ import AS_authentication as AS_util
 import bingo_authentication as bingo_util
 
 def multi_play(players, bingo):
-    bingo.generate_message(bingo._SK, "Bingo")
+    bingo.generate_message(bingo._SK, bingo.get_folder())
     for player in players:
         # Send commitment and receive signature ack
         send_commit(player, bingo)

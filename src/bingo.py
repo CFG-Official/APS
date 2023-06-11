@@ -41,6 +41,14 @@ class Bingo(Participant):
         self._winner_id = None
         self._game_code = str(random.randint(0,1000000))
         
+    def get_folder(self):
+        """
+        Get the folder.
+        # Returns
+            string
+                The folder.
+        """
+        return self._folder
         
     # BLOCKCHAIN VERSION
     def get_blockchain(self):
