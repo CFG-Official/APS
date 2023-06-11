@@ -61,9 +61,12 @@ def main():
     
     bingo.add_pre_game_block()
     performance["Players initializations"] = time.time() - start_time
-    start_time = time.time()
     round.multi_play([alice,bob],bingo)
     performance["One Round Time"] = time.time() - start_time
+    start_time = time.time()
+    for i in range(0, 9):
+        round.multi_play([alice,bob],bingo)
+
     start_time = time.time()
     winner = bingo.choose_winner()
     
