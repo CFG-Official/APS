@@ -271,12 +271,12 @@ class Bingo(Participant):
         self._player_id = str(self._last_id)
         self._last_id += 1
          
-        self._round = 0
+        #self._round = 0
         
         self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
         self._seed = rand_extract(self._security_param, "base64")
         
-        super().generate_message(self._SK, self._folder)
+        #super().generate_message(self._SK, "Bingo")
         
     def receive_commitment(self, params, commitment, signature):
         """ 
@@ -330,6 +330,7 @@ class Bingo(Participant):
                 The signature of the sala bingo on the concatenation between the params
                 and the commitment.
         """
+
         # the server adds its own paramsa, commitment and signature
         self._players_info[str(self._player_id)] = {}
         self._players_info[str(self._player_id)]["params"] = self._last_message[0]

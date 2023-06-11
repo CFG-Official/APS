@@ -15,7 +15,7 @@ class Participant:
         self._security_param = 32
         self._game_code = None
         self._player_id = None
-        self._round = 0
+        self._round = 1
         self._last_contribute = None
         self._last_randomess = None
         self._last_message = None
@@ -58,7 +58,7 @@ class Participant:
             raise Exception("Game code or player id not set. This player isn't in a game.")
         
         # Set the 
-        self._round += 1 # Go to next round
+        #self._round += 1 # Go to next round
         params = (self._player_id, self._game_code, str(self._round), str(datetime.datetime.now()))
 
         # Compute commitment for a certain round
@@ -70,6 +70,12 @@ class Participant:
         self._last_message = (params, comm, signature)
 
         return self._last_message
+
+    def next_round(self):
+        """
+        Go to next round.
+        """
+        self._round += 1
 
     def __compute_commitment(self):
         """
@@ -125,7 +131,7 @@ class Participant:
         self._blockchain = blocks
         self.set_game_code(game_code)
         self.set_player_id(player_id)
-        self._round = 0
+        #self._round = 0
 
         # Inizializzo la PRF per il calcolo dei contributi casuali
         self._IV = int(rand_extract(self._security_param, "hex"), 32) # Cast to a 32-bit integer cause it's used as a counter
@@ -137,7 +143,7 @@ class Participant:
         """
         self._game_code = None
         self._player_id = None
-        self._round = 0
+        self._round = 1
 
         self._IV = None
         self._seed = None

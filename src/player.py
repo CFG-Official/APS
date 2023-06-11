@@ -250,8 +250,13 @@ class Player(User, Participant):
         """
         # hash the concatenation of all the openings
         concat = ""
+        # print("PLAYER: ", self._player_id)
+        # print("ROUND ", self._round)
         for opening in self._contr_open:
+            # print("CONCATENING: ", opening[0])
             concat += opening[0]
+        self._contr_open.clear()
+        self._contr_comm.clear()
         return compute_hash_from_data(concat)
     
     def __verify_commitments(self, contr_comm, contr_open):

@@ -8,6 +8,7 @@ import AS_authentication as AS_util
 import bingo_authentication as bingo_util
 
 def multi_play(players, bingo):
+    bingo.generate_message(bingo._SK, "Bingo")
     for player in players:
         # Send commitment and receive signature ack
         send_commit(player, bingo)
@@ -29,6 +30,9 @@ def multi_play(players, bingo):
         else:
             player.contestate_opening()
 
+    for player in players:
+        player.next_round()
+    bingo.next_round()
 
     print("Sono la Sala Bingo e ho ottenuto:", bingo.get_final_string())
 
@@ -79,7 +83,8 @@ def receive_commitments_and_signature(player, bingo):
         player.contestate_commit()
 
 def send_commit(player, bingo):
-    sign = bingo.receive_commitment(*player.send_commitment())
+    message = player.send_commitment()
+    sign = bingo.receive_commitment(*message)
     if sign:
         # player verifies the signature of the sala bingo on the commitment and the additional parameters
         # if it is not valid, it aborts the game, otherwise it continues
