@@ -1,94 +1,73 @@
 import os
+import shutil
+from pathlib import Path
 from blocks import *
 
 class Blockchain:
     __blockchain_directory_name = 'Application/Blockchain'
-    __blockchain_directory_path = os.path.join(os.getcwd(), __blockchain_directory_name)
-    __blockchain_keys_directory_path = os.path.join(__blockchain_directory_path, 'keys')
-    __blockchain_signatures_directory_path = os.path.join(__blockchain_directory_path, 'signatures')
-    __blockchain_hash_directory_path = os.path.join(__blockchain_directory_path, 'hashes')
-    __blockchain_blocks_file = os.path.join(__blockchain_directory_path, 'blocks.txt')
+    __blockchain_directory_path = Path.cwd() / __blockchain_directory_name
+    __blockchain_keys_directory_path = __blockchain_directory_path / 'keys'
+    __blockchain_signatures_directory_path = __blockchain_directory_path / 'signatures'
+    __blockchain_hash_directory_path = __blockchain_directory_path / 'hashes'
+    __blockchain_blocks_file = __blockchain_directory_path / 'blocks.txt'
 
-    __slots__ = ['__last_block', '__server_public_key_file', '__server_private_key_file','__actual_public_key_file', '__actual_private_key_file','__block_list']
+    __slots__ = ['__block_actions','__last_block', '__server_public_key_file', '__server_private_key_file', '__actual_public_key_file', '__actual_private_key_file', '__block_list']
     def __init__(self, server_public_key_file, server_private_key_file):
-        os.system(f"rm -r {self.__blockchain_directory_path}")
-        os.system(f"mkdir {self.__blockchain_directory_path}")
-        os.system(f"mkdir {self.__blockchain_hash_directory_path}")
-        os.system(f"mkdir {self.__blockchain_keys_directory_path}")
-        # Copy server keys to blockchain directory
-        os.system(f"cp {server_public_key_file} {self.__blockchain_keys_directory_path}/server_public_key.pem")
-        os.system(f"cp {server_private_key_file} {self.__blockchain_keys_directory_path}/server_private_key.pem")
-        # Set new paths for server keys
-        self.__server_public_key_file = os.path.join(self.__blockchain_keys_directory_path, 'server_public_key.pem')
-        self.__server_private_key_file = os.path.join(self.__blockchain_keys_directory_path, 'server_private_key.pem')
+        
+        self.__block_actions = {
+            'pre_game': (self.__create_pre_game_block, self.__check_entry_pre_game),
+            'commit': (self.__create_commit_block, self.__check_entry_commit),
+            'reveal': (self.__create_reveal_block, self.__check_entry_reveal),
+            'dispute': (self.__create_dispute_block, self.__check_entry_dispute),
+            'end_game': (self.__create_end_game_block, self.__check_entry_end_game),
+        }
+        
+        shutil.rmtree(self.__blockchain_directory_path, ignore_errors=True)
+        os.makedirs(self.__blockchain_directory_path, exist_ok=True)
+        os.makedirs(self.__blockchain_hash_directory_path, exist_ok=True)
+        os.makedirs(self.__blockchain_keys_directory_path, exist_ok=True)
+        shutil.copy(server_public_key_file, self.__blockchain_keys_directory_path / 'server_public_key.pem')
+        shutil.copy(server_private_key_file, self.__blockchain_keys_directory_path / 'server_private_key.pem')
+        self.__server_public_key_file = self.__blockchain_keys_directory_path / 'server_public_key.pem'
+        self.__server_private_key_file = self.__blockchain_keys_directory_path / 'server_private_key.pem'
         self.__actual_public_key_file = self.__server_public_key_file
         self.__actual_private_key_file = self.__server_private_key_file
-
-        os.system(f"mkdir {self.__blockchain_signatures_directory_path}")
-        os.system(f"touch {self.__blockchain_blocks_file}")
+        os.makedirs(self.__blockchain_signatures_directory_path, exist_ok=True)
+        self.__blockchain_blocks_file.touch(exist_ok=True)
         self.__block_list = []
         self.__last_block = None
 
     
-    def add_block(self, block_type: str, game_code:str ,data: dict, on_chain: bool = False):
-        block_count = len(self.__block_list)
-        if block_type not in ['pre_game', 'commit', 'reveal', 'dispute', 'end_game']:
+    def add_block(self, block_type: str, game_code: str, data: dict, on_chain: bool = False):
+        if block_type not in self.__block_actions:
             raise TypeError('Invalid block type!')
-        
-        if block_type == 'pre_game':
-            if block_count > 0:
-                raise ValueError('Pre-game block must be the first block!')
-            
-            for user_id, user_pk_temp in data.items():
-                data[user_id] = self.__check_entry_pre_game(user_id, user_pk_temp)
-            
-            self.__last_block = PreGameBlock(self.__blockchain_directory_path, self.__server_public_key_file,self.__server_private_key_file, game_code,data)
-            
-        elif block_type == 'commit':
-            if block_count <= 0:
-                raise ValueError('Commit block must be at least the second block!')
-            
-            for user_id, user_commit in data.items():
-                self.__check_entry_commit(user_id, user_commit)
-            
-            self.__last_block = CommitBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
-        
-        elif block_type == 'reveal':
-            if block_count <= 1:
-                raise ValueError('Reveal block must be at least the third block!')
-            
-            for user_id, user_reveal in data.items():
-                self.__check_entry_reveal(user_id, user_reveal)
-            
-            self.__last_block = RevealBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
-        
-        
-        elif block_type == 'dispute':
-            if block_count <= 0:
-                raise ValueError('Dispute block must be at least the second block!')
-            
-            for user_id, user_dispute in data.items():
-                self.__check_entry_dispute(user_id, user_dispute)
-            
-            self.__last_block = DisputeBlock(self.__blockchain_directory_path, block_count, self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code,data, on_chain)
-        
-        
-        
-        elif block_type == 'end_game':
-            if block_count <= 2:
-                raise ValueError('End game block must be at least the fourth block!')
-            
-            for user_id, user_signature in data.items():
-                self.__check_entry_end_game(user_id, user_signature)
 
-            self.__last_block = PostGameBlock(self.__blockchain_directory_path, block_count, self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,game_code, data)
-        
-        
+        add_func, check_func = self.__block_actions[block_type]
+
+        for user_id, user_data in data.items():
+            data[user_id] = check_func(user_id, user_data)
+
+        self.__last_block = add_func(game_code, data, on_chain)
         self.append_last_block_to_file()
-        
+
         return self.__last_block
-    
-    
+
+
+    def __create_pre_game_block(self, game_code: str, data: dict, on_chain: bool):
+        return PreGameBlock(self.__blockchain_directory_path, self.__server_public_key_file,self.__server_private_key_file, game_code,data)
+
+    def __create_commit_block(self, game_code: str, data: dict, on_chain: bool):
+        return CommitBlock(self.__blockchain_directory_path, len(self.__block_list), self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
+
+    def __create_reveal_block(self, game_code: str, data: dict, on_chain: bool):
+        return RevealBlock(self.__blockchain_directory_path, len(self.__block_list), self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code, data, on_chain)
+
+    def __create_dispute_block(self, game_code: str, data: dict, on_chain: bool):
+        return DisputeBlock(self.__blockchain_directory_path, len(self.__block_list), self.__actual_public_key_file, self.__actual_private_key_file,self.__last_block.get_hash() ,game_code,data, on_chain)
+
+    def __create_end_game_block(self, game_code: str, data: dict, on_chain: bool):
+        return PostGameBlock(self.__blockchain_directory_path, len(self.__block_list), self.__server_public_key_file, self.__server_private_key_file,self.__last_block.get_hash() ,game_code, data)
+
 
     def append_last_block_to_file(self):
         Blockchain.append_to_file(self.__blockchain_blocks_file, str(self.__last_block))
@@ -123,6 +102,9 @@ class Blockchain:
     
     @final  
     def __check_entry_pre_game(self,user_id: str, user_pk: str):
+        if len(self.__block_list) > 0:
+             raise ValueError('Pre-game block must be the first block!')
+        
         Blockchain.__check_user_id(user_id)
         if not isinstance(user_pk, str):
             raise TypeError(f'User {user_id} has a public key file that is not a string')
@@ -133,6 +115,9 @@ class Blockchain:
 
     @final
     def __check_entry_commit(self, user_id: str, user_commit: tuple):
+        if len(self.__block_list) <= 0:
+            raise ValueError('Commit block must be at least the second block!')
+        
         Blockchain.__check_user_id(user_id)
         if not isinstance(user_commit, tuple) or len(user_commit) != 3:
             raise TypeError(f'User {user_id} commit is not a Tuple of 3 elements')
@@ -141,6 +126,9 @@ class Blockchain:
 
     @final
     def __check_entry_reveal(self, user_id: str, user_reveal: tuple):
+        if len(self.__block_list) <= 1:
+            raise ValueError('Reveal block must be at least the third block!')
+        
         Blockchain.__check_user_id(user_id)
         if not isinstance(user_reveal, tuple) or len(user_reveal) != 2:
             raise TypeError(f'User {user_id} reveal is not a Tuple of 2 elements')
@@ -148,6 +136,9 @@ class Blockchain:
     
     @final
     def __check_entry_end_game(self, user_id: str, user_endgame: tuple):
+        if len(self.__block_list) <= 2:
+            raise ValueError('End game block must be at least the fourth block!')
+        
         Blockchain.__check_user_id(user_id)
         if not isinstance(user_endgame, tuple) or len(user_endgame) != 3:
             raise TypeError(f'User {user_id} data is not a Tuple of 3 elements')
@@ -156,6 +147,9 @@ class Blockchain:
 
     @final
     def __check_entry_dispute(self, user_id: str, user_dispute: tuple):
+        if len(self.__block_list) <= 0:
+                raise ValueError('Dispute block must be at least the second block!')
+        
         Blockchain.__check_user_id(user_id)
         if not isinstance(user_dispute, tuple) or (len(user_dispute) != 2 and len(user_dispute) != 3):
             raise TypeError(f'User {user_id} dispute is not a Tuple of 2 or 3 elements!')
