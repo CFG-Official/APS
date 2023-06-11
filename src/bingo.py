@@ -1,6 +1,4 @@
-import sys, os, datetime
-sys.path.append(os.path.join(os.path.dirname(__file__), '..')) 
-
+import datetime
 from participant import Participant
 from utils.bash_util import execute_command
 from utils.commands_util import commands
@@ -125,7 +123,7 @@ class Bingo(Participant):
         issuer = execute_command(commands["cert_extract_issuer"](GP_cert))
         subject = execute_command(commands["cert_extract_subject"](CA_cert))
 
-        known_subjects = [execute_command(commands["cert_extract_subject"](CA)) for CA in self._known_CAs]
+        [execute_command(commands["cert_extract_subject"](CA)) for CA in self._known_CAs]
         return issuer == subject
         
     def __check_sign(self, GP_cert, AS_cert):

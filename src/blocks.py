@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from utils.hash_util import compute_hash_from_data
 from utils.pseudorandom_util import rand_extract
-from utils.keys_util import sign_ECDSA_from_variable, verify_ECDSA, sign_ECDSA
+from utils.keys_util import verify_ECDSA, sign_ECDSA
 from utils.keys_util import base64_key_view
 import binascii
 from typing import final
@@ -58,18 +58,13 @@ class AbstractBlock(ABC):
         # Returns 
             True if the signature is valid, False otherwise.
         """
-        return verify_ECDSA(PK, self._blockchain_directory_path+'/hashes/'+str(self._block_number)+'.txt', self.get_signature_file())
+        return verify_ECDSA(PK, str(self._blockchain_directory_path)+'/hashes/'+str(self._block_number)+'.txt', self.get_signature_file())
         
 
     @abstractmethod
     def __str__(self):
         pass
 
-    
-    @abstractmethod
-    def _verify_block(self):
-        pass
-    
     
     def _header_string(self):
 
@@ -110,7 +105,7 @@ class AbstractBlock(ABC):
     
     def __compute_signature(self, private_key):
         signature_path = f'{self._blockchain_directory_path}/signatures/{self._block_number}.pem'
-        sign_ECDSA(private_key, self._blockchain_directory_path+'/hashes/'+str(self._block_number)+'.txt', signature_path)
+        sign_ECDSA(private_key, str(self._blockchain_directory_path)+'/hashes/'+str(self._block_number)+'.txt', signature_path)
         self._signature_file = signature_path
         return AbstractBlock.binary_to_hex(signature_path)
 
@@ -137,9 +132,6 @@ class PreGameBlock(AbstractBlock):
         output += self._internal_block_data_footer
         return output
     
-
-    def _verify_block(self):
-        pass
     
 
 class CommitBlock(AbstractBlock):
@@ -163,8 +155,6 @@ class CommitBlock(AbstractBlock):
         output += self._internal_block_data_footer
         return output
     
-    def _verify_block(self):
-        pass
     
 class RevealBlock(AbstractBlock):
 
@@ -186,8 +176,6 @@ class RevealBlock(AbstractBlock):
         output += self._internal_block_data_footer
         return output
     
-    def _verify_block(self):
-        pass
     
 
 class PostGameBlock(AbstractBlock):
@@ -210,8 +198,6 @@ class PostGameBlock(AbstractBlock):
         output += self._internal_block_data_footer
         return output
     
-    def _verify_block(self):
-        pass
 
 class DisputeBlock(AbstractBlock):
         
@@ -242,5 +228,3 @@ class DisputeBlock(AbstractBlock):
             output += self._internal_block_data_footer
             return output
         
-        def _verify_block(self):
-            pass
