@@ -52,3 +52,11 @@ The project is divided into 4 work packages (WP), each with a specific objective
 
 ## Performance Evaluation
 The performance of the implemented system was evaluated during the experimentation phase. The collected data is presented in the performance evaluation table, showcasing the time taken for various phases of execution.
+
+## Group Members
+| Last Name, First Name | E-Mail                                                                   | ID          |
+|-----------------------|--------------------------------------------------------------------------|-------------|
+| Cerasuolo Cristian    | [c.cerasuolo2@studenti.unisa.it](mailto:c.cerasuolo2@studenti.unisa.it)  | 0622701899  |
+| Ferrara Grazia        | [g.ferrara75@studenti.unisa.it](mailto:g.ferrara75@studenti.unisa.it)    | 0622701901  |
+| Guarini Alessio       | [a.guarini7@studenti.unisa.it](mailto:a.guarini7@studenti.unisa.it)      | 0622702042  |
+
