@@ -29,7 +29,7 @@ The project is divided into 4 work packages (WP), each with a specific objective
 ## Implementation Details
 ### Release of GP 2.0
 - Description of the chronological order of actions for users to obtain GP 2.0.
-- Implementation details of user and Authority Sanitaria interaction.
+- Implementation details of user and Health Authority interaction.
 - Utilization of cryptography commands from OpenSSL for implementation.
 
 ### Authentication at the Bingo Hall
