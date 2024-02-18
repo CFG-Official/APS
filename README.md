@@ -52,6 +52,3 @@ The project is divided into 4 work packages (WP), each with a specific objective
 
 ## Performance Evaluation
 The performance of the implemented system was evaluated during the experimentation phase. The collected data is presented in the performance evaluation table, showcasing the time taken for various phases of execution.
-
-## License
-This project is released under the [MIT License](LICENSE).
